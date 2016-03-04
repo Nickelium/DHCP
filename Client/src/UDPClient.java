@@ -91,5 +91,14 @@ public class UDPClient
 	{
 		
 	}
+
+	
+	public void run()
+	{
+		//discover
+		//listen
+		//
+		
+	}
 	
 }
