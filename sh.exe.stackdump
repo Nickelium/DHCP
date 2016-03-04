@@ -1,0 +1,9 @@
+MSYS-1.0.12 Build:2012-07-05 14:56
+Exception: STATUS_ACCESS_VIOLATION at eip=68027968
+eax=00000001 ebx=0069EF2C ecx=680A4C5C edx=001E0000 esi=0069EF30 edi=00000000
+ebp=0069EF04 esp=0069ED8C program=C:\Program Files (x86)\Git\bin\sh.exe
+cs=0023 ds=002B es=002B fs=0053 gs=002B ss=002B
+Stack trace:
+Frame     Function  Args
+0069EF04  68027968  (0069EF98, 00000000, 0069EFB8, 75069959)
+End of stack trace

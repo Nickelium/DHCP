@@ -32,19 +32,49 @@ public class UDPClient
 		{
 			DHCPMessage message = new DHCPMessage();
 			ByteBuffer b = ByteBuffer.allocate(4);
-			//hashcode 32 bit = 4 byte fills transactionID with exactly 4 byte
-			b.putInt(message.hashCode());
-			message.opCode = 1; //request
+			
+			// TODO: more options by filling up the field?
+			
+			// Request
+			message.opCode = 1; 
+			
+			// Length MAC-adress
 			message.hardWareAddressLength = 6;
+			
+			// Hopcount set to zero by client
 			message.hopCount = 0;
+			
+			// Hashcode 32 bit = 4 byte fills transactionID with exactly 4 byte
+			b.putInt(message.hashCode());
 			message.transactionID = b.array();
+			
+			// Not yet an IP adress -> null
 			message.clientIP = b.putInt(0).array();
+			
+			// Not yet an IP adress -> null
 			message.yourIP = b.putInt(0).array();
+			
+			// No broadcast because of the assignment, given IP-adress
+			message.serverIP = IPServerString.getBytes();
+			
+			// TODO: set or not set gatewayIP
+			
+			// Client hardware adress
+			final byte[] mac = NetworkInterface.getNetworkInterfaces().nextElement().getHardwareAddress();
+			message.clientHardWareAddress = mac;
+			
+			// TODO: set or not set Server Host Name
+			
+			// TODO: set or not set Boot File Name
+			
+			// Set option 53 to value 1
+			ByteBuffer option = ByteBuffer.allocate(4);
+			option.putInt(1);
+			message.addOption((byte)53, (byte)1, option.array());
 			
 			IPServer = InetAddress.getByName(IPServerString);
 			DatagramPacket sendingPacket = new DatagramPacket(message.retrieveBytes(), message.getLength(), IPServer, portServer);
-			clientSocket.send(sendingPacket);
-		
+			clientSocket.send(sendingPacket);	
 		} 
 		catch (Exception e) 
 		{

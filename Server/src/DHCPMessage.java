@@ -72,11 +72,20 @@ public class DHCPMessage
     public byte[] gateWayIP = new byte[4]; // relay agent IP (5)
     
     public byte[] clientHardWareAddress = new byte[16]; // Client HW address (16)
+    
     public byte[] serverHostName = new byte[64]; // Optional server host name (64)
+    
     public byte[] bootFileName = new byte[128]; // Boot file name (128)
-    public ArrayList<Byte> options = new ArrayList<>(); //options (rest)
+    
+    public void addOption(byte Code, byte Length, byte[] Data){
+    	DHCPoption newoption = new DHCPoption(Code, Length, Data);
+    	options.add(newoption);
+    }
+    public ArrayList<DHCPoption> options = new ArrayList<>(); //options (rest)
     
     public final int minimalLength = 236; //bytes
+    
+    
     
     public DHCPMessage()
     {
@@ -91,34 +100,70 @@ public class DHCPMessage
     	hardWareAddressLength = buffer[2];
     	hopCount = buffer[3];
     	
-    	int j = 3;
+    	int j = 4;
     	
-    	for(int i = 0; i < secs.length; i++, j++)
+    	for(int i = 0; i < secs.length; i++)
     		secs[i] = buffer[i + j];
-    	for(int i = 0; i < flags.length; i++, j++)
+    	j += secs.length;
+    	
+    	for(int i = 0; i < flags.length; i++)
     		flags[i] = buffer[i+j];
+    	j += flags.length;
     	
-    	for(int i = 0; i < transactionID.length; i++, j++)
+    	for(int i = 0; i < transactionID.length; i++)
     		transactionID[i] = buffer[i+j];
-    	for(int i = 0; i < clientIP.length; i++, j++)
+    	j += transactionID.length;
+    	
+    	for(int i = 0; i < clientIP.length; i++)
     		clientIP[i] = buffer[i+j];
-    	for(int i = 0; i < yourIP.length; i++, j++)
+    	j += clientIP.length;
+    	
+    	for(int i = 0; i < yourIP.length; i++)
     		yourIP[i] = buffer[i+j];
-    	for(int i = 0; i < serverIP.length; i++, j++)
+    	j += yourIP.length;
+    	
+    	for(int i = 0; i < serverIP.length; i++)
     		serverIP[i] = buffer[i+j];
-    	for(int i = 0; i < gateWayIP.length; i++, j++)
+    	j += serverIP.length;
+    	
+    	for(int i = 0; i < gateWayIP.length; i++)
     		gateWayIP[i] = buffer[i+j];
+    	j += gateWayIP.length;
     	
-    	for(int i = 0; i < clientHardWareAddress.length; i++, j++)
+    	for(int i = 0; i < clientHardWareAddress.length; i++)
     		clientHardWareAddress[i + j] = buffer[i+j];
-    	for(int i = 0; i < serverHostName.length; i++, j++)
+    	j += clientHardWareAddress.length;
+    	
+    	for(int i = 0; i < serverHostName.length; i++)
     		serverHostName[i] = buffer[i+j];
-    	for(int i = 0; i < bootFileName.length; i++, j++)
+    	j += serverHostName.length;
+    	
+    	for(int i = 0; i < bootFileName.length; i++)
     		bootFileName[i] = buffer[i+j];
+    	j += bootFileName.length;
     	
-    	for(int i = 0; i < buffer.length - minimalLength; i++, j++)
-    		options.add(buffer[i+j]);
-    	
+    	int k = buffer.length - j;
+    	byte[] bufferedoptions = new byte[k];
+    	for(int i = 0; i < k; i++)
+    		bufferedoptions[i] = buffer[j+i];
+    	createOptions(bufferedoptions); 	
+    }
+    
+    private void createOptions(byte[] Buffer){
+    	if(Buffer.length == 0)
+    		return;
+    	byte option = Buffer[0];
+    	byte length = Buffer[1];
+    	int k = 2+length;
+    	byte[] data = new byte[k];
+    	for(int i=0; i<k+1; i++)
+    		data[i] = Buffer[i+2];
+    	addOption(option, length, data);
+    	int l = Buffer.length - k;
+    	byte[] topass = new byte[l];
+    	for(int i=0; i<l+1; i++)
+    		topass[i] = Buffer[k+i];
+    	createOptions(topass);
     }
     
     public byte[] retrieveBytes()
@@ -130,33 +175,52 @@ public class DHCPMessage
     	toReturn[2] = hardWareAddressLength;;
     	toReturn[3] = hopCount;
     	
-    	int j = 3;
+    	int j = 4;
     	
-    	for(int i = 0; i < secs.length; i++, j++)
+    	for(int i = 0; i < secs.length; i++)
     		toReturn[i + j] = secs[i];
-    	for(int i = 0; i < flags.length; i++, j++)
+    	j += secs.length;
+    	
+    	for(int i = 0; i < flags.length; i++)
     		toReturn[i + j] = flags[i];
+    	j += flags.length;
     	
-    	for(int i = 0; i < transactionID.length; i++, j++)
+    	for(int i = 0; i < transactionID.length; i++)
     		toReturn[i + j] = transactionID[i];
-    	for(int i = 0; i < clientIP.length; i++, j++)
+    	j += transactionID.length;
+    	
+    	for(int i = 0; i < clientIP.length; i++)
     		toReturn[i + j] = clientIP[i];
-    	for(int i = 0; i < yourIP.length; i++, j++)
+    	j += clientIP.length;
+    	
+    	for(int i = 0; i < yourIP.length; i++)
     		toReturn[i + j] = yourIP[i];
-    	for(int i = 0; i < serverIP.length; i++, j++)
+    	j += yourIP.length;
+    	
+    	for(int i = 0; i < serverIP.length; i++)
     		toReturn[i + j] = serverIP[i];
-    	for(int i = 0; i < gateWayIP.length; i++, j++)
+    	j += serverIP.length;
+    	
+    	for(int i = 0; i < gateWayIP.length; i++)
     		toReturn[i + j] = gateWayIP[i];
+    	j += gateWayIP.length;
     	
-    	for(int i = 0; i < clientHardWareAddress.length; i++, j++)
+    	for(int i = 0; i < clientHardWareAddress.length; i++)
     		toReturn[i + j] = clientHardWareAddress[i];
-    	for(int i = 0; i < serverHostName.length; i++, j++)
-    		toReturn[i + j] = serverHostName[i];
-    	for(int i = 0; i < bootFileName.length; i++, j++)
-    		toReturn[i + j] = serverHostName[i];
+    	j += clientHardWareAddress.length;
     	
-    	for(int i = 0; i < options.size(); i++, j++)
-    		toReturn[i + j] = options.get(i);
+    	for(int i = 0; i < serverHostName.length; i++)
+    		toReturn[i + j] = serverHostName[i];
+    	j += serverHostName.length;
+    	
+    	for(int i = 0; i < bootFileName.length; i++)
+    		toReturn[i + j] = serverHostName[i];
+    	j += bootFileName.length;
+    	
+    	for(int i = 0; i < options.size(); i++){
+    		System.arraycopy(options.get(i), 0, toReturn, j, options.get(i).getLength());
+    		j += options.get(i).getLength();
+    	}
     	
     	return toReturn;
     		
@@ -164,8 +228,16 @@ public class DHCPMessage
     
     public int getLength()
     {
-    	return minimalLength + options.size();
+    	return minimalLength + getOptionsLength();
     }
+
+	private int getOptionsLength() {
+		int length = 0;
+		for(int i = 0; i < options.size(); i++){
+    		length += options.get(i).getLength();
+    	}
+		return length;
+	}
     
 
 }
