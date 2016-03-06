@@ -11,8 +11,20 @@ public class DHCPoption {
 		this.Data = Data;
 	}
 	
-	public byte getLength(){
+	public byte getTotalLength(){
 		return (byte) (this.Length + 2);
+	}
+	
+	public byte getLength(){
+		return this.Length;
+	}
+	
+	public byte getCode(){
+		return (byte) this.Code;
+	}
+	
+	public byte[] getData(){
+		return this.Data;
 	}
 	
 	public byte[] getBytes(){
