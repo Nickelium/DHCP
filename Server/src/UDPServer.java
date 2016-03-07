@@ -1,3 +1,4 @@
+import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -9,7 +10,7 @@ public class UDPServer
 	///release timer ?
 	private String[] poolIP;
 	private DatagramSocket serverSocket;
-	public final int portServer = 68;
+	public final int portServer = 69;
 	
 	public UDPServer()
 	{
@@ -23,8 +24,29 @@ public class UDPServer
 		}
 	}
 	
-	public void DHCPOffer()
+	public void DHCPOffer(DatagramPacket receivePacket)
 	{
+		DHCPMessage message = new DHCPMessage(receivePacket.getData());
+		
+		message.opCode = 2;
+		//Other fields to fill in
+		byte[] buffer = message.retrieveBytes();
+		int length = buffer.length;
+		// Mag dit wel ? Aangeziien de client nog geen ip address heeft ? 
+		// Echte DHCP gebeurt via broadcasting
+		InetAddress IPClient = receivePacket.getAddress();
+		int portClient = receivePacket.getPort();
+		DatagramPacket response = new DatagramPacket(buffer, length, IPClient, portClient);
+		try 
+		{
+			serverSocket.send(response);
+		} 
+		catch (IOException e) 
+		{
+			e.printStackTrace();
+		}
+		
+		
 		
 	}
 	
@@ -43,16 +65,28 @@ public class UDPServer
 		while(true)
 		{
 			//listen to incoming packet
-			DatagramPacket receivePacket = new DatagramPacket(BUFFER,BUFFER.length);
-			serverSocket.receive(receivePacket);
+			byte[] buffer = new byte[256];
+			DatagramPacket receivePacket = new DatagramPacket(buffer,buffer.length);
+			try 
+			{
+				serverSocket.receive(receivePacket);
+			}
+			catch (IOException e) 
+			{
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		
+			System.out.print("Server receives :\n");
+			for(byte b : receivePacket.getData())
+				System.out.print(b+" ");
 			
 			
 			//determine type of request
-			
+			DHCPMessage response = new DHCPMessage(receivePacket.getData());
 			
 			//determine type of reply by calling above functions
-	
+			DHCPOffer(receivePacket);
 		}
 	}
 	

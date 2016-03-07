@@ -6,12 +6,14 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.util.Enumeration;
+import java.util.List;
 
 public class UDPClient 
 {
 	public InetAddress IPServer; 
-	public final int portServer = 1234;
-	public final String IPServerString = "10.33.14.246";
+	public final int portServer = 69;
+	public final String IPServerString = "localhost";
 	private DatagramSocket clientSocket;
 	
 	public  UDPClient()
@@ -31,7 +33,12 @@ public class UDPClient
 		try 
 		{
 			DHCPMessage message = new DHCPMessage();
+			ByteBuffer a = ByteBuffer.allocate(4);
 			ByteBuffer b = ByteBuffer.allocate(4);
+			ByteBuffer c = ByteBuffer.allocate(4);
+			ByteBuffer d = ByteBuffer.allocate(4);
+
+			
 			
 			// TODO: more options by filling up the field?
 			
@@ -45,23 +52,24 @@ public class UDPClient
 			message.hopCount = 0;
 			
 			// Hashcode 32 bit = 4 byte fills transactionID with exactly 4 byte
-			b.putInt(message.hashCode());
-			message.transactionID = b.array();
+			a.putInt(message.hashCode());
+			message.transactionID = a.array();
 			
 			// Not yet an IP adress -> null
 			message.clientIP = b.putInt(0).array();
 			
 			// Not yet an IP adress -> null
-			message.yourIP = b.putInt(0).array();
+			message.yourIP = d.putInt(0).array();
 			
 			// No broadcast because of the assignment, given IP-adress
-			message.serverIP = IPServerString.getBytes();
+			message.serverIP = InetAddress.getByName(IPServerString).getAddress();
 			
 			// TODO: set or not set gatewayIP
 			
 			// Client hardware adress
-			final byte[] mac = NetworkInterface.getNetworkInterfaces().nextElement().getHardwareAddress();
-			message.clientHardWareAddress = mac;
+			//nullpointer exception when calling gethardwareaddress + each networkinterface has a different mac address
+			//final byte[] mac = NetworkInterface.getNetworkInterfaces().nextElement().getHardwareAddress();
+			//message.clientHardWareAddress = mac;
 			
 			// TODO: set or not set Server Host Name
 			
@@ -75,6 +83,7 @@ public class UDPClient
 			IPServer = InetAddress.getByName(IPServerString);
 			DatagramPacket sendingPacket = new DatagramPacket(message.retrieveBytes(), message.getLength(), IPServer, portServer);
 			clientSocket.send(sendingPacket);	
+			
 		} 
 		catch (Exception e) 
 		{
@@ -95,9 +104,29 @@ public class UDPClient
 	
 	public void run()
 	{
-		//discover
-		//listen
-		//
+		DHCPDiscover();
+		//listen for DHCPOffer
+		byte[] buffer = new byte[128];
+		int length = buffer.length;
+		DatagramPacket receivePacket = new DatagramPacket(buffer,length);
+		try 
+		{
+			clientSocket.receive(receivePacket);
+		}
+		catch (IOException e) 
+		{
+			e.printStackTrace();
+		}
+		System.out.print("Client receives :\n");
+		for(byte b : receivePacket.getData())
+			System.out.print(b +" ");
+		DHCPRequest();
+		//listen for DHCPAck OR DHCPNak
+		
+		DHCPRelease();
+		//Later on DHCPRelease
+		clientSocket.close();
+	
 		
 	}
 	

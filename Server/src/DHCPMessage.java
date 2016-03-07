@@ -161,7 +161,8 @@ public class DHCPMessage
     		bootFileName[i] = buffer[i+j];
     	j += bootFileName.length;
     	
-    	if(j != buffer.length-1){
+    	if(j < buffer.length-1)
+    	{
 	    	int k = buffer.length - j;
 	    	byte[] bufferedoptions = new byte[k];
 	    	for(int i = 0; i < k; i++)
@@ -184,7 +185,9 @@ public class DHCPMessage
 
 	*/
     private void createOptions(byte[] Buffer){
-    	if(Buffer.length == 0)
+    	//1 byte geeft error bij checken buffer.length ==0, want outofbound
+    	//2 bytes minimaal aantal bytes :: bv. 2(=code) 0(lengte)
+    	if(Buffer.length < 2)
     		return;
     	byte option = Buffer[0];
     	byte length = Buffer[1];
@@ -248,11 +251,11 @@ public class DHCPMessage
     	j += serverHostName.length;
     	
     	for(int i = 0; i < bootFileName.length; i++)
-    		toReturn[i + j] = serverHostName[i];
+    		toReturn[i + j] = bootFileName[i];
     	j += bootFileName.length;
     	
     	for(int i = 0; i < options.size(); i++){
-    		System.arraycopy(options.get(i), 0, toReturn, j, options.get(i).getTotalLength());
+    		System.arraycopy(options.get(i).getBytes(), 0, toReturn, j, options.get(i).getTotalLength());
     		j += options.get(i).getTotalLength();
     	}
     	
