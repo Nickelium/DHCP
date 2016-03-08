@@ -1,0 +1,7 @@
+- Timer release nodig ?
+- Terugsturen naar client maar client heeft IP, hoe dan ? In 't echt via broadcast
+- Mac address hoe bepalen :: er zijn versschillende
+- Sommige mac address geven null terug
+- How to allocate new IP address
+- Volgore attributen van dhcpmessage :: transactionID, secs, flags ? 
+- Mag je import InetAddress/NetworkInterface gebruiken ?
