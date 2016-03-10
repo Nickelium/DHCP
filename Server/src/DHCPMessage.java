@@ -2,6 +2,8 @@ import java.util.ArrayList;
 
 public class DHCPMessage 
 {
+	public static final byte BOOTREQUEST = 1;
+	public static final byte BOOTREPLY = 2;
 	/**
 	 * General type message
 	 * 1=request | 2= reply

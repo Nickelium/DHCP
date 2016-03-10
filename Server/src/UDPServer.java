@@ -65,7 +65,7 @@ public class UDPServer
 		while(true)
 		{
 			//listen to incoming packet
-			byte[] buffer = new byte[256];
+			byte[] buffer = new byte[576];
 			DatagramPacket receivePacket = new DatagramPacket(buffer,buffer.length);
 			try 
 			{

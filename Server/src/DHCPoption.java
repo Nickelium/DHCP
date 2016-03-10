@@ -1,4 +1,4 @@
-
+// todo : add checker end options code number 255
 public class DHCPoption {
 	
 	private byte Code;

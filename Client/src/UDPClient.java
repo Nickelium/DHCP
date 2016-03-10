@@ -9,12 +9,15 @@ import java.nio.ByteBuffer;
 import java.util.Enumeration;
 import java.util.List;
 
+
 public class UDPClient 
 {
 	public InetAddress IPServer; 
-	public final int portServer = 69;
-	public final String IPServerString = "localhost";
+	public final int portServer = 1234;
+	public final String IPServerString = "10.33.14.246";
+	public final byte ethernet = 1;
 	private DatagramSocket clientSocket;
+	public final int[] macAddress = {0x40,0xE2,0x30,0xCB,0xDE,0xE3,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
 	
 	public  UDPClient()
 	{
@@ -33,18 +36,14 @@ public class UDPClient
 		try 
 		{
 			DHCPMessage message = new DHCPMessage();
-			ByteBuffer a = ByteBuffer.allocate(4);
-			ByteBuffer b = ByteBuffer.allocate(4);
-			ByteBuffer c = ByteBuffer.allocate(4);
-			ByteBuffer d = ByteBuffer.allocate(4);
-
-			
+	
 			
 			// TODO: more options by filling up the field?
 			
 			// Request
 			message.opCode = 1; 
 			
+			message.hardWareType = 1;
 			// Length MAC-adress
 			message.hardWareAddressLength = 6;
 			
@@ -52,33 +51,58 @@ public class UDPClient
 			message.hopCount = 0;
 			
 			// Hashcode 32 bit = 4 byte fills transactionID with exactly 4 byte
+			ByteBuffer a = ByteBuffer.allocate(4);
 			a.putInt(message.hashCode());
 			message.transactionID = a.array();
 			
-			// Not yet an IP adress -> null
-			message.clientIP = b.putInt(0).array();
+			int[] b = {0,0};
+			message.secs = toBytes(b);
+			
+			int[] c = {0,0};
+			message.flags = toBytes(c);
+			
 			
 			// Not yet an IP adress -> null
-			message.yourIP = d.putInt(0).array();
+			int[] d = {0,0,0,0};
+			message.clientIP = toBytes(d);
+			
+			// Not yet an IP adress -> null
+			int[] e = {0,0,0,0};
+			message.yourIP =  toBytes(e);
 			
 			// No broadcast because of the assignment, given IP-adress
 			message.serverIP = InetAddress.getByName(IPServerString).getAddress();
 			
-			// TODO: set or not set gatewayIP
+			// Gateway ip set to o
+			int[] f = {0,0,0,0};
+			message.gateWayIP = toBytes(f);
 			
 			// Client hardware adress
 			//nullpointer exception when calling gethardwareaddress + each networkinterface has a different mac address
 			//final byte[] mac = NetworkInterface.getNetworkInterfaces().nextElement().getHardwareAddress();
-			//message.clientHardWareAddress = mac;
+			
+			message.clientHardWareAddress = toBytes(macAddress);
 			
 			// TODO: set or not set Server Host Name
+			int[] g = new int[64];
+			for(int i = 0; i < g.length; i++)
+				g[i] = 0;
+			message.serverHostName = toBytes(g);
 			
 			// TODO: set or not set Boot File Name
+			int[] h = new int[128];
+			for(int i = 0; i < h.length; i++)
+				h[i] = 0;
+			message.bootFileName = toBytes(h);
 			
 			// Set option 53 to value 1
-			ByteBuffer option = ByteBuffer.allocate(4);
-			option.putInt(1);
-			message.addOption((byte)53, (byte)1, option.array());
+			
+			
+			int[] i = {1};
+			message.addOption((byte)53, (byte)1, toBytes(i));
+			
+			int[] j = {0};
+			message.addOption((byte) 255, (byte)0, toBytes(j));
 			
 			IPServer = InetAddress.getByName(IPServerString);
 			DatagramPacket sendingPacket = new DatagramPacket(message.retrieveBytes(), message.getLength(), IPServer, portServer);
@@ -128,6 +152,15 @@ public class UDPClient
 		clientSocket.close();
 	
 		
+	}
+	
+	private byte[] toBytes(int[] list){
+		int k = list.length;
+		byte[] out = new byte[k];
+		for(int i=0; i<list.length; i++){
+			out[i] = (byte)list[i];
+		}
+		return out;
 	}
 	
 }
