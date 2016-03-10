@@ -10,7 +10,7 @@ public class UDPServer
 	///release timer ?
 	private String[] poolIP;
 	private DatagramSocket serverSocket;
-	public final int portServer = 69;
+	public final int portServer = 1234;
 	
 	public UDPServer()
 	{
@@ -77,6 +77,7 @@ public class UDPServer
 				e.printStackTrace();
 			}
 		
+			System.out.println(receivePacket.getLength());
 			System.out.print("Server receives :\n");
 			for(byte b : receivePacket.getData())
 				System.out.print(b+" ");

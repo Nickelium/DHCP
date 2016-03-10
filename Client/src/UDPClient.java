@@ -142,6 +142,7 @@ public class UDPClient
 			e.printStackTrace();
 		}
 		System.out.print("Client receives :\n");
+		System.out.println(receivePacket.getLength());
 		for(byte b : receivePacket.getData())
 			System.out.print(b +" ");
 		DHCPRequest();
