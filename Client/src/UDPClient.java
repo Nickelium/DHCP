@@ -12,12 +12,21 @@ import java.util.List;
 
 public class UDPClient 
 {
-	public InetAddress IPServer; 
+	/**
+	 * Hardcode values
+	 */
 	public final int portServer = 1234;
 	public final String IPServerString = "10.33.14.246";
-	public final byte ethernet = 1;
-	private DatagramSocket clientSocket;
+	public final String IPServerLocalhost = "localhost";
 	public final int[] macAddress = {0x40,0xE2,0x30,0xCB,0xDE,0xE3,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+	public final byte MACLENGTH = 6;
+	
+	/**
+	 * Attributes
+	 */
+	public InetAddress IPServer; 
+	private DatagramSocket clientSocket;
+	
 	
 	public  UDPClient()
 	{
@@ -41,11 +50,11 @@ public class UDPClient
 			// TODO: more options by filling up the field?
 			
 			// Request
-			message.opCode = 1; 
+			message.opCode = DHCPMessage.BOOTREQUEST; 
 			
-			message.hardWareType = 1;
+			message.hardWareType = DHCPMessage.ETHERNET;
 			// Length MAC-adress
-			message.hardWareAddressLength = 6;
+			message.hardWareAddressLength = MACLENGTH;
 			
 			// Hopcount set to zero by client
 			message.hopCount = 0;
@@ -56,53 +65,53 @@ public class UDPClient
 			message.transactionID = a.array();
 			
 			int[] b = {0,0};
-			message.secs = toBytes(b);
+			message.secs = Utility.toBytes(b);
 			
 			int[] c = {0,0};
-			message.flags = toBytes(c);
+			message.flags = Utility.toBytes(c);
 			
 			
 			// Not yet an IP adress -> null
 			int[] d = {0,0,0,0};
-			message.clientIP = toBytes(d);
+			message.clientIP = Utility.toBytes(d);
 			
 			// Not yet an IP adress -> null
 			int[] e = {0,0,0,0};
-			message.yourIP =  toBytes(e);
+			message.yourIP =  Utility.toBytes(e);
 			
 			// No broadcast because of the assignment, given IP-adress
 			message.serverIP = InetAddress.getByName(IPServerString).getAddress();
 			
 			// Gateway ip set to o
 			int[] f = {0,0,0,0};
-			message.gateWayIP = toBytes(f);
+			message.gateWayIP = Utility.toBytes(f);
 			
 			// Client hardware adress
 			//nullpointer exception when calling gethardwareaddress + each networkinterface has a different mac address
 			//final byte[] mac = NetworkInterface.getNetworkInterfaces().nextElement().getHardwareAddress();
 			
-			message.clientHardWareAddress = toBytes(macAddress);
+			message.clientHardWareAddress = Utility.toBytes(macAddress);
 			
 			// TODO: set or not set Server Host Name
 			int[] g = new int[64];
 			for(int i = 0; i < g.length; i++)
 				g[i] = 0;
-			message.serverHostName = toBytes(g);
+			message.serverHostName = Utility.toBytes(g);
 			
 			// TODO: set or not set Boot File Name
 			int[] h = new int[128];
 			for(int i = 0; i < h.length; i++)
 				h[i] = 0;
-			message.bootFileName = toBytes(h);
+			message.bootFileName = Utility.toBytes(h);
 			
 			// Set option 53 to value 1
 			
 			
 			int[] i = {1};
-			message.addOption((byte)53, (byte)1, toBytes(i));
+			message.addOption((byte)53, (byte)1, Utility.toBytes(i));
 			
 			int[] j = {0};
-			message.addOption((byte) 255, (byte)0, toBytes(j));
+			message.addOption((byte) 255, (byte)0, Utility.toBytes(j));
 			
 			IPServer = InetAddress.getByName(IPServerString);
 			DatagramPacket sendingPacket = new DatagramPacket(message.retrieveBytes(), message.getLength(), IPServer, portServer);
@@ -153,15 +162,5 @@ public class UDPClient
 		clientSocket.close();
 	
 		
-	}
-	
-	private byte[] toBytes(int[] list){
-		int k = list.length;
-		byte[] out = new byte[k];
-		for(int i=0; i<list.length; i++){
-			out[i] = (byte)list[i];
-		}
-		return out;
-	}
-	
+	}	
 }

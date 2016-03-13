@@ -28,7 +28,7 @@ public class UDPServer
 	{
 		DHCPMessage message = new DHCPMessage(receivePacket.getData());
 		
-		message.opCode = 2;
+		message.opCode = DHCPMessage.BOOTREPLY;
 		//Other fields to fill in
 		byte[] buffer = message.retrieveBytes();
 		int length = buffer.length;

@@ -2,15 +2,18 @@ import java.util.ArrayList;
 
 public class DHCPMessage 
 {
-	public static final byte BOOTREQUEST = 1;
-	public static final byte BOOTREPLY = 2;
+	public final static byte BOOTREQUEST = 1;
+	public final static byte BOOTREPLY = 2;
 	/**
 	 * General type message
 	 * 1=request | 2= reply
 	 * No other values possible
 	 */
 	public byte opCode; 
-
+	
+	
+	public final static byte ETHERNET = 1;
+	public final static byte IEEE802 = 6;
 	/**
 	 * Hardware type
 	 * 1 = 10MB ethernet
@@ -104,8 +107,9 @@ public class DHCPMessage
     }
     public ArrayList<DHCPoption> options = new ArrayList<>(); //options (rest)
     
-    public final int minimalLength = 236; //bytes
+    public final static int MINLENGTH = 236; //bytes
     
+    public final static int MAXLENGTH = 576;
     
     
     public DHCPMessage()
@@ -189,7 +193,7 @@ public class DHCPMessage
     private void createOptions(byte[] Buffer){
     	//1 byte geeft error bij checken buffer.length ==0, want outofbound
     	//2 bytes minimaal aantal bytes :: bv. 2(=code) 0(lengte)
-    	if(Buffer.length < 2)
+    	if(Buffer.length < 2 || Buffer[0] == (byte)255)
     		return;
     	byte option = Buffer[0];
     	byte length = Buffer[1];
@@ -207,7 +211,7 @@ public class DHCPMessage
     
     public byte[] retrieveBytes()
     {
-    	byte[] toReturn = new byte[getLength()];
+    	byte[] toReturn = new byte[getLength() + 1];
     	
     	toReturn[0] = opCode;
     	toReturn[1] = hardWareType;
@@ -260,14 +264,15 @@ public class DHCPMessage
     		System.arraycopy(options.get(i).getBytes(), 0, toReturn, j, options.get(i).getTotalLength());
     		j += options.get(i).getTotalLength();
     	}
-    	
+
+    	toReturn[getLength()] = (byte) 255;
     	return toReturn;
     		
     }
     
     public int getLength()
     {
-    	return minimalLength + getOptionsLength();
+    	return MINLENGTH + getOptionsLength();
     }
 
 	private int getOptionsLength() {
