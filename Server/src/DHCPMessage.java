@@ -1,3 +1,4 @@
+import java.security.cert.PKIXRevocationChecker.Option;
 import java.util.ArrayList;
 
 public class DHCPMessage 
@@ -300,6 +301,20 @@ public class DHCPMessage
     	}
 		return length;
 	}
-    
-
+	
+	public String toString()
+	{
+		String toStringOptions = "\n";
+		
+		for(DHCPoption opt : options)
+			toStringOptions += opt.toString() +"\n";
+		
+		return "OpCode: " + Utility.unsignedByte(opCode) + "\nHardwaretype: " + Utility.unsignedByte(hardWareType) 
+				+ "\nHardwareaddresslength: "	+  Utility.unsignedByte(hardWareAddressLength) + "\nHopcount: " + Utility.unsignedByte(hopCount) 
+				+"\nTransaction ID:  " + Utility.toInt(transactionID) + "\nSecs: " + Utility.toInt(secs) + "\nFlags: " + Utility.toInt(flags) 
+				+ "\nClient IP: " + Utility.toInt(clientIP) + "\nYour IP: " + Utility.toInt(yourIP)+ "\nServer IP: " + Utility.toInt(serverIP)
+				+ "\nGateway IP: " + Utility.toInt(gateWayIP) + "\nClienthardwareaddress: " + Utility.toInt(clientHardWareAddress) 
+				+ "\nServerhostname: "  + Utility.toInt(serverHostName) + "\nBootfilename :" + Utility.toInt(bootFileName)   
+				+ toStringOptions;	
+	}
 }

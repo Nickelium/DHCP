@@ -158,7 +158,10 @@ public class DHCPClient
 			e.printStackTrace();
 		}
 	
-		Utility.printData(receivePacket.getData());
+		Utility.printDataBytes(receivePacket.getData());
+		
+		DHCPMessage message = new DHCPMessage(receivePacket.getData());
+		System.out.println(message);
 		
 		DHCPRequest();
 		//listen for DHCPAck OR DHCPNak

@@ -3,7 +3,9 @@ public class DHCPoption {
 	
 	private byte Code;
 	private byte Length;
+	//Byte representation of data
 	private byte[] Data = new byte[Length];
+	
 	
 	DHCPoption(byte Code, byte Length, byte[] Data){
 		this.Code = Code;
@@ -36,5 +38,13 @@ public class DHCPoption {
 			tosend[i+2] = Data[i];
 		}
 		return tosend;
+	}
+	
+	
+	//Data is as a int representation
+	@Override
+	public String toString()
+	{
+		return "Option code:" + Utility.unsignedByte(Code) + " Option length: " + Utility.unsignedByte(Length) + " Option data: " + Utility.toInt(Data);
 	}
 }

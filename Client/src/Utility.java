@@ -1,3 +1,4 @@
+import java.nio.ByteBuffer;
 
 public class Utility
 {
@@ -12,16 +13,32 @@ public class Utility
 		return out;
 	}
 	
+	public static byte[] toByteArray(int value) 
+	{
+	     return  ByteBuffer.allocate(4).putInt(value).array();
+	}
+	
+	public static int toInt(byte[] bytes)
+	{
+		int value = 0;
+		for (int i = 0; i < bytes.length; i++)
+		{
+		   value = (value << 8) + (bytes[i] & 0xff);
+		}
+		return value;
+	}
+	
 	public static int unsignedByte(byte b)
 	{
 		return (int)b & 0xFF;
 	}
 	
-	public static void printData(byte[] data)
+	public static void printDataBytes(byte[] data)
 	{
 		for(byte b : data)
 			System.out.print(unsignedByte(b) +" ");
 		System.out.print("\n");
 	}
+	
 
 }

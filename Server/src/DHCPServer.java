@@ -91,10 +91,11 @@ public class DHCPServer
 				e.printStackTrace();
 			}
 		
-			Utility.printData(receivePacket.getData());
+			Utility.printDataBytes(receivePacket.getData());
 			
 			//determine type of request
 			DHCPMessage response = new DHCPMessage(receivePacket.getData());
+			System.out.println(response);
 			
 			switch (response.getType())
 			{
