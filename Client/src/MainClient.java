@@ -3,7 +3,7 @@ public class MainClient {
 
 	public static void main(String[] args) 
 	{
-		UDPClient client = new UDPClient();
+		DHCPClient client = new DHCPClient();
 		client.run();
 		
 

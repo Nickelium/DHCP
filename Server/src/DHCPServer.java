@@ -5,18 +5,21 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 
-public class UDPServer 
+public class DHCPServer 
 {
-	///release timer ?
-	private String[] poolIP;
+	private IPStorage pool;
 	private DatagramSocket serverSocket;
 	public final int portServer = 1234;
 	
-	public UDPServer()
+	public DHCPServer()
 	{
+		System.out.print("Initialization of the server started\n");
+		
 		try 
 		{
 			serverSocket = new DatagramSocket(portServer);
+			pool = new IPStorage();
+			System.out.print("Initialization of the server completed\n");
 		} 
 		catch (SocketException e) 
 		{
@@ -26,39 +29,50 @@ public class UDPServer
 	
 	public void DHCPOffer(DatagramPacket receivePacket)
 	{
+		System.out.print("Building DHCPOffer\n");
 		DHCPMessage message = new DHCPMessage(receivePacket.getData());
 		
 		message.opCode = DHCPMessage.BOOTREPLY;
 		//Other fields to fill in
 		byte[] buffer = message.retrieveBytes();
 		int length = buffer.length;
-		// Mag dit wel ? Aangeziien de client nog geen ip address heeft ? 
-		// Echte DHCP gebeurt via broadcasting
+
 		InetAddress IPClient = receivePacket.getAddress();
 		int portClient = receivePacket.getPort();
 		DatagramPacket response = new DatagramPacket(buffer, length, IPClient, portClient);
 		try 
 		{
 			serverSocket.send(response);
+			System.out.print("DHCPOffer sent\n");
 		} 
 		catch (IOException e) 
 		{
 			e.printStackTrace();
 		}
 		
-		
-		
 	}
 	
-	public void DHCPAck()
+	public boolean canAcceptRequest(DatagramPacket receivePacket)
+	{
+		return true;
+	}
+	
+	public void DHCPAck(DatagramPacket receivePacket)
 	{
 		
 	}
 	
-	public void DHCPNak()
+	public void DHCPNak(DatagramPacket receivePacket)
 	{
 		
 	}
+
+	public void handleDHCPRelease(DatagramPacket receivePacket)
+	{
+		
+		
+	}
+	
 	
 	public void run()
 	{
@@ -70,24 +84,37 @@ public class UDPServer
 			try 
 			{
 				serverSocket.receive(receivePacket);
+				System.out.print("Server receives packet with a size of " + receivePacket.getLength() +"\n");
 			}
 			catch (IOException e) 
 			{
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		
-			System.out.println(receivePacket.getLength());
-			System.out.print("Server receives :\n");
-			for(byte b : receivePacket.getData())
-				System.out.print(b+" ");
-			
+			Utility.printData(receivePacket.getData());
 			
 			//determine type of request
 			DHCPMessage response = new DHCPMessage(receivePacket.getData());
 			
-			//determine type of reply by calling above functions
-			DHCPOffer(receivePacket);
+			switch (response.getType())
+			{
+				case DHCPMessage.DHCPDISCOVER:
+					DHCPOffer(receivePacket);
+					break;
+				
+				case DHCPMessage.DHCPREQUEST:
+					
+					if(canAcceptRequest(receivePacket))
+						DHCPAck(receivePacket);
+					else
+						DHCPNak(receivePacket);
+					break;
+				
+				case DHCPMessage.DHCPRELEASE:
+					handleDHCPRelease(receivePacket);
+					break;
+			}
+		
 		}
 	}
 	

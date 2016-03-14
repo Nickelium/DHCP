@@ -16,5 +16,12 @@ public class Utility
 	{
 		return (int)b & 0xFF;
 	}
+	
+	public static void printData(byte[] data)
+	{
+		for(byte b : data)
+			System.out.print(unsignedByte(b) +" ");
+		System.out.print("\n");
+	}
 
 }

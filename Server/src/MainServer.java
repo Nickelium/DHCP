@@ -3,8 +3,8 @@ public class MainServer {
 
 	public static void main(String[] args)
 	{
-		UDPServer udpServer = new UDPServer();
-		udpServer.run();
+		DHCPServer server = new DHCPServer();
+		server.run();
 
 	}
 

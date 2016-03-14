@@ -190,6 +190,23 @@ public class DHCPMessage
 	    DHCPINFORM = 8     //client to server asking for local info
 
 	*/
+    
+    public final static byte DHCPDISCOVER = 1;
+    public final static byte DHCPOFFER = 2;
+    public final static byte DHCPREQUEST = 3;
+    public final static byte DHCPDECLINE = 4;
+    public final static byte DHCPACK = 5;
+    public final static byte DHCPNAK = 6;
+    public final static byte DHCPRELEASE = 7;
+    public final static byte DHCPINFORM = 8;
+    
+    public byte getType()
+    {
+    	for(DHCPoption opt : options)
+    		if(opt.getCode() == 53 && opt.getLength() == 1) return opt.getData()[0];
+    	return 0;
+    }
+    
     private void createOptions(byte[] Buffer){
     	//1 byte geeft error bij checken buffer.length ==0, want outofbound
     	//2 bytes minimaal aantal bytes :: bv. 2(=code) 0(lengte)
@@ -274,6 +291,7 @@ public class DHCPMessage
     {
     	return MINLENGTH + getOptionsLength();
     }
+    
 
 	private int getOptionsLength() {
 		int length = 0;

@@ -10,7 +10,7 @@ import java.util.Enumeration;
 import java.util.List;
 
 
-public class UDPClient 
+public class DHCPClient 
 {
 	/**
 	 * Hardcode values
@@ -18,6 +18,10 @@ public class UDPClient
 	public final int portServer = 1234;
 	public final String IPServerString = "10.33.14.246";
 	public final String IPServerLocalhost = "localhost";
+	
+	public final String IPInUse = IPServerLocalhost;
+	
+	//macaddress with padding
 	public final int[] macAddress = {0x40,0xE2,0x30,0xCB,0xDE,0xE3,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
 	public final byte MACLENGTH = 6;
 	
@@ -28,11 +32,13 @@ public class UDPClient
 	private DatagramSocket clientSocket;
 	
 	
-	public  UDPClient()
+	public  DHCPClient()
 	{
+		System.out.print("Initialization of the client started\n");
 		try 
 		{
 			clientSocket = new DatagramSocket();
+			System.out.print("Initialization of the client completed\n");
 		} 
 		catch (SocketException e) 
 		{
@@ -42,6 +48,7 @@ public class UDPClient
 	
 	public void DHCPDiscover() 
 	{
+		System.out.print("Building DHCPDiscover\n");
 		try 
 		{
 			DHCPMessage message = new DHCPMessage();
@@ -80,25 +87,22 @@ public class UDPClient
 			message.yourIP =  Utility.toBytes(e);
 			
 			// No broadcast because of the assignment, given IP-adress
-			message.serverIP = InetAddress.getByName(IPServerString).getAddress();
+			message.serverIP = InetAddress.getByName(IPInUse).getAddress();
 			
 			// Gateway ip set to o
 			int[] f = {0,0,0,0};
 			message.gateWayIP = Utility.toBytes(f);
 			
-			// Client hardware adress
-			//nullpointer exception when calling gethardwareaddress + each networkinterface has a different mac address
-			//final byte[] mac = NetworkInterface.getNetworkInterfaces().nextElement().getHardwareAddress();
-			
+			// Client hardware adress			
 			message.clientHardWareAddress = Utility.toBytes(macAddress);
 			
-			// TODO: set or not set Server Host Name
+			// Optional: set or not set Server Host Name
 			int[] g = new int[64];
 			for(int i = 0; i < g.length; i++)
 				g[i] = 0;
 			message.serverHostName = Utility.toBytes(g);
 			
-			// TODO: set or not set Boot File Name
+			// Optional: set or not set Boot File Name
 			int[] h = new int[128];
 			for(int i = 0; i < h.length; i++)
 				h[i] = 0;
@@ -113,9 +117,11 @@ public class UDPClient
 			int[] j = {0};
 			message.addOption((byte) 255, (byte)0, Utility.toBytes(j));
 			
-			IPServer = InetAddress.getByName(IPServerString);
+			IPServer = InetAddress.getByName(IPInUse);
 			DatagramPacket sendingPacket = new DatagramPacket(message.retrieveBytes(), message.getLength(), IPServer, portServer);
 			clientSocket.send(sendingPacket);	
+			
+			System.out.print("DHCPDiscover sent\n");
 			
 		} 
 		catch (Exception e) 
@@ -139,23 +145,25 @@ public class UDPClient
 	{
 		DHCPDiscover();
 		//listen for DHCPOffer
-		byte[] buffer = new byte[128];
+		byte[] buffer = new byte[576];
 		int length = buffer.length;
 		DatagramPacket receivePacket = new DatagramPacket(buffer,length);
 		try 
 		{
 			clientSocket.receive(receivePacket);
+			System.out.print("Client receives packet with a size of " + receivePacket.getLength() + "\n");
 		}
 		catch (IOException e) 
 		{
 			e.printStackTrace();
 		}
-		System.out.print("Client receives :\n");
-		System.out.println(receivePacket.getLength());
-		for(byte b : receivePacket.getData())
-			System.out.print(b +" ");
+	
+		Utility.printData(receivePacket.getData());
+		
 		DHCPRequest();
 		//listen for DHCPAck OR DHCPNak
+		//if DHCPNak return method
+		
 		
 		DHCPRelease();
 		//Later on DHCPRelease
