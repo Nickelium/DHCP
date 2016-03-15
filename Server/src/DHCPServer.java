@@ -4,6 +4,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 
 public class DHCPServer 
 {
@@ -27,7 +28,7 @@ public class DHCPServer
 		}
 	}
 	
-	public void DHCPOffer(DatagramPacket receivePacket)
+	public void DHCPOffer(DatagramPacket receivePacket) throws UnknownHostException
 	{
 		System.out.print("Building DHCPOffer\n");
 		DHCPMessage message = new DHCPMessage(receivePacket.getData());
@@ -36,10 +37,28 @@ public class DHCPServer
 		//Other fields to fill in
 		byte[] buffer = message.retrieveBytes();
 		int length = buffer.length;
+		
+		// TODO: IP geven
+		//IP yourIP = pool.reserveAddress(message.clientHardWareAddress);
+		//message.yourIP(yourIP);
+		
+		// Server IP set
+		message.serverIP = InetAddress.getByName("localhost").getAddress();
+		
+		// reset options fields
+		message.resetoptions();
+		
+		// Set option 53 to value 2
+		int[] i = {2};
+		message.addOption((byte)53, (byte)1, Utility.toBytes(i));
+		
+		// Set option 255
+		int[] j = {0};
+		message.addOption((byte) 255, (byte)0, Utility.toBytes(j));
 
 		InetAddress IPClient = receivePacket.getAddress();
 		int portClient = receivePacket.getPort();
-		DatagramPacket response = new DatagramPacket(buffer, length, IPClient, portClient);
+		DatagramPacket response = new DatagramPacket(message.retrieveBytes(), length, IPClient, portClient);
 		try 
 		{
 			serverSocket.send(response);
@@ -100,7 +119,12 @@ public class DHCPServer
 			switch (response.getType())
 			{
 				case DHCPMessage.DHCPDISCOVER:
+				try {
 					DHCPOffer(receivePacket);
+				} catch (UnknownHostException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 					break;
 				
 				case DHCPMessage.DHCPREQUEST:

@@ -86,8 +86,9 @@ public class DHCPClient
 			int[] e = {0,0,0,0};
 			message.yourIP =  Utility.toBytes(e);
 			
-			// No broadcast because of the assignment, given IP-adress
-			message.serverIP = InetAddress.getByName(IPInUse).getAddress();
+			// Set server IP to zero
+			int[] e2 = {0,0,0,0};
+			message.serverIP =  Utility.toBytes(e2);
 			
 			// Gateway ip set to o
 			int[] f = {0,0,0,0};
@@ -109,11 +110,10 @@ public class DHCPClient
 			message.bootFileName = Utility.toBytes(h);
 			
 			// Set option 53 to value 1
-			
-			
 			int[] i = {1};
 			message.addOption((byte)53, (byte)1, Utility.toBytes(i));
 			
+			// Set option 255 to indicate the end of the message
 			int[] j = {0};
 			message.addOption((byte) 255, (byte)0, Utility.toBytes(j));
 			
@@ -130,9 +130,33 @@ public class DHCPClient
 		}
 	}
 	
-	public  void DHCPRequest()
-	{
-	
+	public  void DHCPRequest(DatagramPacket receivePacket){
+		System.out.print("Building DHCP request \n");
+		DHCPMessage message = new DHCPMessage(receivePacket.getData());
+		
+		// Set the opcode to request
+		message.opCode = DHCPMessage.BOOTREQUEST;
+		
+		// clear the options
+		message.resetoptions();
+		
+		// Set option 50 to the offered IP adress
+		message.addOption((byte)50, (byte)4, message.yourIP);
+		
+		// Set yout IP to zero
+		int[] yourip = {0,0,0,0};
+		message.yourIP =  Utility.toBytes(yourip);
+		
+		// Set option 53 to value 3
+		int[] i = {3};
+		message.addOption((byte)53, (byte)1, Utility.toBytes(i));
+		
+		// Set option 54 to the IP adress of the server
+		message.addOption((byte)54, (byte)4, message.serverIP);
+					
+		// Set option 255 to indicate the end of the message
+		int[] j = {0};
+		message.addOption((byte) 255, (byte)0, Utility.toBytes(j));
 	}
 	
 	public void DHCPRelease()

@@ -317,4 +317,8 @@ public class DHCPMessage
 				+ "\nServerhostname: "  + Utility.toInt(serverHostName) + "\nBootfilename :" + Utility.toInt(bootFileName)   
 				+ toStringOptions;	
 	}
+
+	public void resetoptions() {
+		options.clear();
+	}
 }
