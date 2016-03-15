@@ -33,6 +33,14 @@ public class Utility
 		return (int)b & 0xFF;
 	}
 	
+	public static int[] unsignedBytes(byte[] Byte)
+	{
+		int[] toReturn = new int [Byte.length];
+		for(int i = 0; i < Byte.length; i++)
+			toReturn[i] = unsignedByte(Byte[i]);
+		return toReturn;
+	}
+	
 	public static void printDataBytes(byte[] data)
 	{
 		for(byte b : data)

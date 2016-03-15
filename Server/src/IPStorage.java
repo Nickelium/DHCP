@@ -1,12 +1,12 @@
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class IPStorage 
 {
-	public ArrayList<IPContainer> listIPContainer;
-	//IP4 == 4 byte
-	private String IP;
-	private int IPRange;
+	private ArrayList<IPContainer> listIPContainer;
+	private byte[] IP  = Utility.toBytes(new int[]{192,168,1,0});
+	private int IPRange = 5;
 	
 	public IPStorage()
 	{
@@ -16,12 +16,12 @@ public class IPStorage
 	
 	private void init()
 	{
-		String IPIncrementing = IP;
+		byte[] IPIncrementing = IP;
 		try
 		{
 			for(int i = 0; i < IPRange; i++)
 			{
-				IPContainer ipcontainer = new IPContainer(InetAddress.getByName(IPIncrementing),null,0);
+				IPContainer ipcontainer = new IPContainer(IPIncrementing,null,0);
 				IPIncrementing = incrementIPAddress(IPIncrementing);
 				listIPContainer.add(ipcontainer);
 			}
@@ -34,12 +34,13 @@ public class IPStorage
 	
 	//Assume only in the range of zero to 255
 	//Does not support out of this range
-	private String incrementIPAddress(String IPAddress)
+	private byte[] incrementIPAddress(byte[] IPAddress)
 	{
-		String[] parts = IPAddress.split(".");
-		if(parts.length != 4) throw new IllegalArgumentException("Invalid ip4 format");
+		if(IPAddress.length != 4) throw new IllegalArgumentException("Invalid ip4 format");
 		
-		return parts[0] + parts[1] + parts[2] + (Integer.parseInt(parts[3]) + 1);
+		int IPInt = Utility.toInt(IPAddress);
+		IPInt++;
+		return Utility.toByteArray(IPInt);
 	}
 	
 	private boolean isReserved(InetAddress ip)
@@ -50,23 +51,36 @@ public class IPStorage
 		return false;
 	}
 	
-	public InetAddress lookUp(String macaddress)
+	public byte[] lookUp(byte[] macaddress)
 	{
 		for(IPContainer ipcontainer : listIPContainer)
-			if(ipcontainer.reserver.equals(macaddress)) return ipcontainer.IPAddress;
+			if(ipcontainer.reserver != null && Arrays.equals(ipcontainer.reserver, macaddress)) return ipcontainer.IPAddress;
 		return null;
 	}
 	
-	public InetAddress reserveAddress(String macaddress)
+	public byte[] reserveAddress(byte[] macaddress, double leaseDuration)
 	{
-		if(lookUp(macaddress) != null) return null;
+		if(lookUp(macaddress) != null) return lookUp(macaddress);
 		for(IPContainer ipcontainer : listIPContainer)
 			if(!ipcontainer.isReserved())
 			{
 				ipcontainer.reserver = macaddress;
-				ipcontainer.leaseDuration = Math.random()*100;
+				ipcontainer.leaseDuration = leaseDuration;
 				return ipcontainer.IPAddress;
 			}
 		return null;
+	}
+	
+	public boolean release(byte[] macaddress)
+	{
+		if(lookUp(macaddress) == null) return false;
+		for(IPContainer ipcontainer : listIPContainer)
+			if(ipcontainer.reserver != null && Arrays.equals(ipcontainer.reserver, macaddress)) 
+			{
+				ipcontainer.reserver = null;
+				ipcontainer.leaseDuration = 0.0;
+				return true;
+			}
+		return false;
 	}
 }

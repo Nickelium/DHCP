@@ -5,6 +5,7 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 
 public class DHCPServer 
 {
@@ -20,7 +21,7 @@ public class DHCPServer
 		{
 			serverSocket = new DatagramSocket(portServer);
 			pool = new IPStorage();
-			System.out.print("Initialization of the server completed\n");
+			System.out.println("Initialization of the server completed\n");
 		} 
 		catch (SocketException e) 
 		{
@@ -35,12 +36,12 @@ public class DHCPServer
 		
 		message.opCode = DHCPMessage.BOOTREPLY;
 		//Other fields to fill in
-		byte[] buffer = message.retrieveBytes();
-		int length = buffer.length;
 		
 		// TODO: IP geven
 		//IP yourIP = pool.reserveAddress(message.clientHardWareAddress);
 		//message.yourIP(yourIP);
+		double leaseDuration = Math.random()*300;
+		message.yourIP = pool.reserveAddress(message.clientHardWareAddress, leaseDuration);
 		
 		// Server IP set
 		message.serverIP = InetAddress.getByName("localhost").getAddress();
@@ -52,17 +53,21 @@ public class DHCPServer
 		int[] i = {2};
 		message.addOption((byte)53, (byte)1, Utility.toBytes(i));
 		
+		//TODO ADD LEASE TIME AS OPTION
+		
 		// Set option 255
 		int[] j = {0};
 		message.addOption((byte) 255, (byte)0, Utility.toBytes(j));
 
 		InetAddress IPClient = receivePacket.getAddress();
 		int portClient = receivePacket.getPort();
-		DatagramPacket response = new DatagramPacket(message.retrieveBytes(), length, IPClient, portClient);
+		
+		byte[] sendingBytes = message.retrieveBytes();
+		DatagramPacket response = new DatagramPacket(sendingBytes, sendingBytes.length, IPClient, portClient);
 		try 
 		{
 			serverSocket.send(response);
-			System.out.print("DHCPOffer sent\n");
+			System.out.println("DHCPOffer sent\n");
 		} 
 		catch (IOException e) 
 		{
@@ -73,23 +78,127 @@ public class DHCPServer
 	
 	public boolean canAcceptRequest(DatagramPacket receivePacket)
 	{
-		return true;
+		try
+		{
+			DHCPMessage message = new DHCPMessage(receivePacket.getData());
+			return Arrays.equals(InetAddress.getByName("localhost").getAddress(), message.serverIP) ;
+		}
+		catch(Exception e)
+		{
+			return false;
+		}
 	}
 	
-	public void DHCPAck(DatagramPacket receivePacket)
+	public void DHCPAck(DatagramPacket receivePacket) throws UnknownHostException
 	{
-		
+		try
+		{
+			System.out.print("Building DHCPAck\n");
+			DHCPMessage message = new DHCPMessage(receivePacket.getData());
+			
+			message.opCode = DHCPMessage.BOOTREPLY;
+			//Other fields to fill in
+			
+			// TODO: IP geven
+			//IP yourIP = pool.reserveAddress(message.clientHardWareAddress);
+			//message.yourIP(yourIP);
+			double leaseDuration = Math.random()*300;
+			message.yourIP = pool.reserveAddress(message.clientHardWareAddress, leaseDuration);
+			
+			// Server IP set
+			message.serverIP = InetAddress.getByName("localhost").getAddress();
+			
+			// reset options fields
+			message.resetoptions();
+			
+			// Set option 53 to value 2
+			int[] i = {2};
+			message.addOption((byte)53, (byte)1, Utility.toBytes(i));
+			
+			//TODO ADD LEASE TIME AS OPTION
+			
+			// Set option 255
+			int[] j = {0};
+			message.addOption((byte) 255, (byte)0, Utility.toBytes(j));
+	
+			InetAddress IPClient = receivePacket.getAddress();
+			int portClient = receivePacket.getPort();
+			
+			byte[] sendingBytes = message.retrieveBytes();
+			DatagramPacket response = new DatagramPacket(sendingBytes, sendingBytes.length, IPClient, portClient);
+			try 
+			{
+				serverSocket.send(response);
+				System.out.println("DHCPAck sent\n");
+			} 
+			catch (IOException e) 
+			{
+				e.printStackTrace();
+			}
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
 	}
 	
-	public void DHCPNak(DatagramPacket receivePacket)
+	public void DHCPNak(DatagramPacket receivePacket) throws UnknownHostException
 	{
-		
+		try
+		{
+			System.out.print("Building DHCPAk\n");
+			DHCPMessage message = new DHCPMessage(receivePacket.getData());
+			
+			message.opCode = DHCPMessage.BOOTREPLY;
+			//Other fields to fill in
+			
+			// TODO: IP geven
+			//IP yourIP = pool.reserveAddress(message.clientHardWareAddress);
+			//message.yourIP(yourIP);
+			double leaseDuration = Math.random()*300;
+			message.yourIP = pool.reserveAddress(message.clientHardWareAddress, leaseDuration);
+			
+			// Server IP set
+			message.serverIP = InetAddress.getByName("localhost").getAddress();
+			
+			// reset options fields
+			message.resetoptions();
+			
+			// Set option 53 to value 2
+			int[] i = {2};
+			message.addOption((byte)53, (byte)1, Utility.toBytes(i));
+			
+			//TODO ADD LEASE TIME AS OPTION
+			
+			// Set option 255
+			int[] j = {0};
+			message.addOption((byte) 255, (byte)0, Utility.toBytes(j));
+	
+			InetAddress IPClient = receivePacket.getAddress();
+			int portClient = receivePacket.getPort();
+			
+			byte[] sendingBytes = message.retrieveBytes();
+			DatagramPacket response = new DatagramPacket(sendingBytes, sendingBytes.length, IPClient, portClient);
+			try 
+			{
+				serverSocket.send(response);
+				System.out.println("DHCPNak sent\n");
+			} 
+			catch (IOException e) 
+			{
+				e.printStackTrace();
+			}
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
 	}
 
 	public void handleDHCPRelease(DatagramPacket receivePacket)
 	{
-		
-		
+		DHCPMessage message = new DHCPMessage(receivePacket.getData());
+		pool.release(message.clientHardWareAddress);
 	}
 	
 	
@@ -115,29 +224,35 @@ public class DHCPServer
 			//determine type of request
 			DHCPMessage response = new DHCPMessage(receivePacket.getData());
 			System.out.println(response);
-			
-			switch (response.getType())
+			try
 			{
-				case DHCPMessage.DHCPDISCOVER:
-				try {
-					DHCPOffer(receivePacket);
-				} catch (UnknownHostException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-					break;
-				
-				case DHCPMessage.DHCPREQUEST:
+				switch (response.getType())
+				{
+					case DHCPMessage.DHCPDISCOVER:
+					try {
+						DHCPOffer(receivePacket);
+					} catch (UnknownHostException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+						break;
 					
-					if(canAcceptRequest(receivePacket))
-						DHCPAck(receivePacket);
-					else
-						DHCPNak(receivePacket);
-					break;
-				
-				case DHCPMessage.DHCPRELEASE:
-					handleDHCPRelease(receivePacket);
-					break;
+					case DHCPMessage.DHCPREQUEST:
+						
+						if(canAcceptRequest(receivePacket))
+							DHCPAck(receivePacket);
+						else
+							DHCPNak(receivePacket);
+						break;
+					
+					case DHCPMessage.DHCPRELEASE:
+						handleDHCPRelease(receivePacket);
+						break;
+				}
+			}
+			catch(Exception e)
+			{
+				e.printStackTrace();
 			}
 		
 		}

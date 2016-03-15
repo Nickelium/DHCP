@@ -1,5 +1,6 @@
 import java.security.cert.PKIXRevocationChecker.Option;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class DHCPMessage 
 {
@@ -102,22 +103,27 @@ public class DHCPMessage
      * @param Length	The length corresponding with the option
      * @param Data		The actual value of the code
      */
+    
+    public static final byte[] COOKIE = Utility.toBytes(new int[]{99,130,83,99});
+    /**
+     * Fix code combination (99.130.83.99), defining start of options zone
+     */
+    public byte[] magicCookie = new byte[4];
+    
     public void addOption(byte Code, byte Length, byte[] Data){
     	DHCPoption newoption = new DHCPoption(Code, Length, Data);
     	options.add(newoption);
     }
     public ArrayList<DHCPoption> options = new ArrayList<>(); //options (rest)
     
-    public final static int MINLENGTH = 236; //bytes
+    public final static int MINLENGTH = 240; //bytes
     
     public final static int MAXLENGTH = 576;
     
-    
     public DHCPMessage()
     {
-    	//put parameters
+    	
     }
-    
     public DHCPMessage(byte[] buffer)
     {
     	//if(buffer.length < minimalLength) throw new Exception();
@@ -168,6 +174,10 @@ public class DHCPMessage
     		bootFileName[i] = buffer[i+j];
     	j += bootFileName.length;
     	
+    	for(int i = 0; i < magicCookie.length; i++)
+    		magicCookie[i] = buffer[i+j];
+    	j += magicCookie.length;
+    		
     	if(j < buffer.length-1)
     	{
 	    	int k = buffer.length - j;
@@ -211,8 +221,15 @@ public class DHCPMessage
     private void createOptions(byte[] Buffer){
     	//1 byte geeft error bij checken buffer.length ==0, want outofbound
     	//2 bytes minimaal aantal bytes :: bv. 2(=code) 0(lengte)
-    	if(Buffer.length < 2 || Buffer[0] == (byte)255)
+    	if(Buffer[0] == (byte)255)
+    	{
+    		byte opCode = (byte) 255;
+    		byte length= (byte) 0;
+    		byte[] data = {0};
+    		addOption(opCode, length, data);
     		return;
+    	}
+    	
     	byte option = Buffer[0];
     	byte length = Buffer[1];
     	int k = length+2;
@@ -278,12 +295,15 @@ public class DHCPMessage
     		toReturn[i + j] = bootFileName[i];
     	j += bootFileName.length;
     	
+    	for(int i = 0; i < magicCookie.length; i++)
+    		toReturn[i + j] = magicCookie[i];
+    	j += magicCookie.length;
+    	
     	for(int i = 0; i < options.size(); i++){
     		System.arraycopy(options.get(i).getBytes(), 0, toReturn, j, options.get(i).getTotalLength());
     		j += options.get(i).getTotalLength();
     	}
 
-    	toReturn[getLength()] = (byte) 255;
     	return toReturn;
     		
     }
@@ -311,10 +331,11 @@ public class DHCPMessage
 		
 		return "OpCode: " + Utility.unsignedByte(opCode) + "\nHardwaretype: " + Utility.unsignedByte(hardWareType) 
 				+ "\nHardwareaddresslength: "	+  Utility.unsignedByte(hardWareAddressLength) + "\nHopcount: " + Utility.unsignedByte(hopCount) 
-				+"\nTransaction ID:  " + Utility.toInt(transactionID) + "\nSecs: " + Utility.toInt(secs) + "\nFlags: " + Utility.toInt(flags) 
-				+ "\nClient IP: " + Utility.toInt(clientIP) + "\nYour IP: " + Utility.toInt(yourIP)+ "\nServer IP: " + Utility.toInt(serverIP)
-				+ "\nGateway IP: " + Utility.toInt(gateWayIP) + "\nClienthardwareaddress: " + Utility.toInt(clientHardWareAddress) 
-				+ "\nServerhostname: "  + Utility.toInt(serverHostName) + "\nBootfilename :" + Utility.toInt(bootFileName)   
+				+"\nTransaction ID:  " + Arrays.toString(Utility.unsignedBytes(transactionID)) + "\nSecs: " +  Arrays.toString(Utility.unsignedBytes(secs)) + "\nFlags: " +  Arrays.toString(Utility.unsignedBytes(flags)) 
+				+ "\nClient IP: " +  Arrays.toString(Utility.unsignedBytes(clientIP)) + "\nYour IP: " +  Arrays.toString(Utility.unsignedBytes(yourIP))+ "\nServer IP: " +  Arrays.toString(Utility.unsignedBytes(serverIP))
+				+ "\nGateway IP: " +  Arrays.toString(Utility.unsignedBytes(gateWayIP)) + "\nClienthardwareaddress: " +  Arrays.toString(Utility.unsignedBytes(clientHardWareAddress))
+				+ "\nServerhostname: "  +  Arrays.toString(Utility.unsignedBytes(serverHostName)) + "\nBootfilename :" +  Arrays.toString(Utility.unsignedBytes(bootFileName))
+				+ "\nMagiccookie: " +  Arrays.toString(Utility.unsignedBytes(magicCookie)) 
 				+ toStringOptions;	
 	}
 

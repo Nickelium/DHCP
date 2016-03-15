@@ -1,3 +1,5 @@
+import java.util.Arrays;
+
 // todo : add checker end options code number 255
 public class DHCPoption {
 	
@@ -45,6 +47,10 @@ public class DHCPoption {
 	@Override
 	public String toString()
 	{
-		return "Option code:" + Utility.unsignedByte(Code) + " Option length: " + Utility.unsignedByte(Length) + " Option data: " + Utility.toInt(Data);
+		return "Option :" + Arrays.toString(new String[]{
+			Utility.unsignedByte(Code)+ "",
+			Utility.unsignedByte(Length)+ "", 
+			Arrays.toString(Utility.unsignedBytes(Data)) 
+			});
 	}
 }

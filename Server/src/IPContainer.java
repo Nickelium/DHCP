@@ -2,14 +2,14 @@ import java.net.InetAddress;
 
 public class IPContainer 
 {
-	public InetAddress IPAddress;
+	public byte[] IPAddress;
 	
 	//MAC Address of the client who lease this ip.
-	public String reserver;
+	public byte[] reserver;
 	
 	public double leaseDuration;
 	
-	public IPContainer(InetAddress newIPAddress, String newReserver, double newLeaseDuration)
+	public IPContainer(byte[] newIPAddress, byte[] newReserver, double newLeaseDuration)
 	{
 		IPAddress = newIPAddress;
 		reserver = newReserver;
@@ -18,7 +18,7 @@ public class IPContainer
 	
 	public boolean isReserved()
 	{
-		return reserver == null;
+		return reserver != null;
 	}
 	
 }

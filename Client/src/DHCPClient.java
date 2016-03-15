@@ -38,7 +38,7 @@ public class DHCPClient
 		try 
 		{
 			clientSocket = new DatagramSocket();
-			System.out.print("Initialization of the client completed\n");
+			System.out.println("Initialization of the client completed\n");
 		} 
 		catch (SocketException e) 
 		{
@@ -109,6 +109,8 @@ public class DHCPClient
 				h[i] = 0;
 			message.bootFileName = Utility.toBytes(h);
 			
+			message.magicCookie = DHCPMessage.COOKIE;
+			
 			// Set option 53 to value 1
 			int[] i = {1};
 			message.addOption((byte)53, (byte)1, Utility.toBytes(i));
@@ -121,7 +123,7 @@ public class DHCPClient
 			DatagramPacket sendingPacket = new DatagramPacket(message.retrieveBytes(), message.getLength(), IPServer, portServer);
 			clientSocket.send(sendingPacket);	
 			
-			System.out.print("DHCPDiscover sent\n");
+			System.out.println("DHCPDiscover sent\n");
 			
 		} 
 		catch (Exception e) 
@@ -131,32 +133,45 @@ public class DHCPClient
 	}
 	
 	public  void DHCPRequest(DatagramPacket receivePacket){
-		System.out.print("Building DHCP request \n");
-		DHCPMessage message = new DHCPMessage(receivePacket.getData());
-		
-		// Set the opcode to request
-		message.opCode = DHCPMessage.BOOTREQUEST;
-		
-		// clear the options
-		message.resetoptions();
-		
-		// Set option 50 to the offered IP adress
-		message.addOption((byte)50, (byte)4, message.yourIP);
-		
-		// Set yout IP to zero
-		int[] yourip = {0,0,0,0};
-		message.yourIP =  Utility.toBytes(yourip);
-		
-		// Set option 53 to value 3
-		int[] i = {3};
-		message.addOption((byte)53, (byte)1, Utility.toBytes(i));
-		
-		// Set option 54 to the IP adress of the server
-		message.addOption((byte)54, (byte)4, message.serverIP);
-					
-		// Set option 255 to indicate the end of the message
-		int[] j = {0};
-		message.addOption((byte) 255, (byte)0, Utility.toBytes(j));
+		try
+		{
+			System.out.print("Building DHCP request \n");
+			DHCPMessage message = new DHCPMessage(receivePacket.getData());
+			
+			// Set the opcode to request
+			message.opCode = DHCPMessage.BOOTREQUEST;
+			
+			// clear the options
+			message.resetoptions();
+			
+			// Set option 50 to the offered IP adress
+			message.addOption((byte)50, (byte)4, message.yourIP);
+			
+			// Set yout IP to zero
+			int[] yourip = {0,0,0,0};
+			message.yourIP =  Utility.toBytes(yourip);
+			
+			// Set option 53 to value 3
+			int[] i = {3};
+			message.addOption((byte)53, (byte)1, Utility.toBytes(i));
+			
+			// Set option 54 to the IP adress of the server
+			message.addOption((byte)54, (byte)4, message.serverIP);
+						
+			// Set option 255 to indicate the end of the message
+			int[] j = {0};
+			message.addOption((byte) 255, (byte)0, Utility.toBytes(j));
+			
+			IPServer = InetAddress.getByAddress(message.serverIP);
+			int portServer = receivePacket.getPort();
+			DatagramPacket sendingPacket = new DatagramPacket(message.retrieveBytes(), message.getLength(), IPServer, portServer);
+			clientSocket.send(sendingPacket);	
+			System.out.println("DHCPRequest sent\n");
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
 	}
 	
 	public void DHCPRelease()
@@ -171,26 +186,39 @@ public class DHCPClient
 		//listen for DHCPOffer
 		byte[] buffer = new byte[576];
 		int length = buffer.length;
-		DatagramPacket receivePacket = new DatagramPacket(buffer,length);
+		DatagramPacket receivePacketOffer = new DatagramPacket(buffer,length);
 		try 
 		{
-			clientSocket.receive(receivePacket);
-			System.out.print("Client receives packet with a size of " + receivePacket.getLength() + "\n");
+			clientSocket.receive(receivePacketOffer);
+			System.out.print("Client receives packet with a size of " + receivePacketOffer.getLength() + "\n");
 		}
 		catch (IOException e) 
 		{
 			e.printStackTrace();
 		}
 	
-		Utility.printDataBytes(receivePacket.getData());
+		Utility.printDataBytes(receivePacketOffer.getData());
 		
-		DHCPMessage message = new DHCPMessage(receivePacket.getData());
+		DHCPMessage message = new DHCPMessage(receivePacketOffer.getData());
 		System.out.println(message);
 		
-		DHCPRequest();
+		DHCPRequest(receivePacketOffer);
 		//listen for DHCPAck OR DHCPNak
 		//if DHCPNak return method
+		DatagramPacket receivePacketAck = new DatagramPacket(buffer,length);
+		try 
+		{
+			clientSocket.receive(receivePacketAck);
+			System.out.print("Client receives packet with a size of " + receivePacketAck.getLength() + "\n");
+		}
+		catch (IOException e) 
+		{
+			e.printStackTrace();
+		}
+		Utility.printDataBytes(receivePacketAck.getData());
 		
+		DHCPMessage message2 = new DHCPMessage(receivePacketAck.getData());
+		System.out.println(message2);
 		
 		DHCPRelease();
 		//Later on DHCPRelease
