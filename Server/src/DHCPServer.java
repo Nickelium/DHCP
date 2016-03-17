@@ -1,3 +1,5 @@
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -7,11 +9,14 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 
+import javax.swing.Timer;
+
 public class DHCPServer 
 {
 	private IPStorage pool;
 	private DatagramSocket serverSocket;
 	public final int portServer = 1234;
+	public final int MAXLEASEDURATION = 3600;
 	
 	public DHCPServer()
 	{
@@ -37,10 +42,8 @@ public class DHCPServer
 		message.opCode = DHCPMessage.BOOTREPLY;
 		//Other fields to fill in
 		
-		// TODO: IP geven
-		//IP yourIP = pool.reserveAddress(message.clientHardWareAddress);
-		//message.yourIP(yourIP);
-		double leaseDuration = Math.random()*300;
+		//Reserve new IP address
+		int leaseDuration = Utility.toInt(message.getOptionData((byte)51));//(int)(Math.random()*300);
 		message.yourIP = pool.reserveAddress(message.clientHardWareAddress, leaseDuration);
 		
 		// Server IP set
@@ -53,6 +56,7 @@ public class DHCPServer
 		int[] i = {2};
 		message.addOption((byte)53, (byte)1, Utility.toBytes(i));
 		
+		message.addOption((byte)54, (byte)4, message.serverIP);
 		//TODO ADD LEASE TIME AS OPTION
 		
 		// Set option 255
@@ -81,7 +85,7 @@ public class DHCPServer
 		try
 		{
 			DHCPMessage message = new DHCPMessage(receivePacket.getData());
-			return Arrays.equals(InetAddress.getByName("localhost").getAddress(), message.serverIP) ;
+			return Utility.toInt(message.getOptionData((byte)51)) < MAXLEASEDURATION  && Arrays.equals(InetAddress.getByName("localhost").getAddress(), message.serverIP) ;
 		}
 		catch(Exception e)
 		{
@@ -96,25 +100,29 @@ public class DHCPServer
 			System.out.print("Building DHCPAck\n");
 			DHCPMessage message = new DHCPMessage(receivePacket.getData());
 			
+			pool.allocateAddress(message.clientHardWareAddress);
+			
 			message.opCode = DHCPMessage.BOOTREPLY;
 			//Other fields to fill in
 			
+			
 			// TODO: IP geven
 			//IP yourIP = pool.reserveAddress(message.clientHardWareAddress);
-			//message.yourIP(yourIP);
-			double leaseDuration = Math.random()*300;
-			message.yourIP = pool.reserveAddress(message.clientHardWareAddress, leaseDuration);
+			byte[] data = message.getOptionData((byte)50);
+			message.yourIP = data;
 			
+		
 			// Server IP set
 			message.serverIP = InetAddress.getByName("localhost").getAddress();
 			
 			// reset options fields
 			message.resetoptions();
 			
-			// Set option 53 to value 2
-			int[] i = {2};
+			// Set option 53 to value 5
+			int[] i = {5};
 			message.addOption((byte)53, (byte)1, Utility.toBytes(i));
 			
+			message.addOption((byte)54, (byte)4,message.serverIP);
 			//TODO ADD LEASE TIME AS OPTION
 			
 			// Set option 255
@@ -146,28 +154,31 @@ public class DHCPServer
 	{
 		try
 		{
-			System.out.print("Building DHCPAk\n");
+			System.out.print("Building DHCPNak\n");
 			DHCPMessage message = new DHCPMessage(receivePacket.getData());
 			
+			pool.release(message.clientHardWareAddress);
 			message.opCode = DHCPMessage.BOOTREPLY;
 			//Other fields to fill in
 			
+			
 			// TODO: IP geven
 			//IP yourIP = pool.reserveAddress(message.clientHardWareAddress);
-			//message.yourIP(yourIP);
-			double leaseDuration = Math.random()*300;
-			message.yourIP = pool.reserveAddress(message.clientHardWareAddress, leaseDuration);
+			byte[] data = message.getOptionData((byte)50);
+			message.yourIP = data;
 			
+		
 			// Server IP set
 			message.serverIP = InetAddress.getByName("localhost").getAddress();
 			
 			// reset options fields
 			message.resetoptions();
 			
-			// Set option 53 to value 2
-			int[] i = {2};
+			// Set option 53 to value 5
+			int[] i = {6};
 			message.addOption((byte)53, (byte)1, Utility.toBytes(i));
 			
+			message.addOption((byte)54, (byte)4,message.serverIP);
 			//TODO ADD LEASE TIME AS OPTION
 			
 			// Set option 255
@@ -204,8 +215,21 @@ public class DHCPServer
 	
 	public void run()
 	{
+		ActionListener actionListener = new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				pool.update();
+				
+			}
+		};
+		Timer timer = new Timer(1000,actionListener);
+		timer.start();
 		while(true)
 		{
+			pool.printContent();
+			
 			//listen to incoming packet
 			byte[] buffer = new byte[576];
 			DatagramPacket receivePacket = new DatagramPacket(buffer,buffer.length);

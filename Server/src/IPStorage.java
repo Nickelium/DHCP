@@ -21,7 +21,7 @@ public class IPStorage
 		{
 			for(int i = 0; i < IPRange; i++)
 			{
-				IPContainer ipcontainer = new IPContainer(IPIncrementing,null,0);
+				IPContainer ipcontainer = new IPContainer(IPIncrementing);
 				IPIncrementing = incrementIPAddress(IPIncrementing);
 				listIPContainer.add(ipcontainer);
 			}
@@ -58,17 +58,32 @@ public class IPStorage
 		return null;
 	}
 	
-	public byte[] reserveAddress(byte[] macaddress, double leaseDuration)
+	public byte[] reserveAddress(byte[] macaddress, int leaseDuration)
 	{
 		if(lookUp(macaddress) != null) return lookUp(macaddress);
 		for(IPContainer ipcontainer : listIPContainer)
 			if(!ipcontainer.isReserved())
 			{
-				ipcontainer.reserver = macaddress;
-				ipcontainer.leaseDuration = leaseDuration;
+				ipcontainer.reserve(macaddress, leaseDuration);
 				return ipcontainer.IPAddress;
 			}
 		return null;
+	}
+	
+	public byte[] allocateAddress(byte[] macaddress)
+	{
+		if(lookUp(macaddress) == null) return null;
+
+		for(IPContainer ipcontainer : listIPContainer)
+			if(Arrays.equals(ipcontainer.reserver, macaddress))
+			{
+				ipcontainer.allocate();
+				return ipcontainer.IPAddress;
+			}
+		
+		System.out.println("Allocation failed");
+		return null;
+		
 	}
 	
 	public boolean release(byte[] macaddress)
@@ -77,10 +92,38 @@ public class IPStorage
 		for(IPContainer ipcontainer : listIPContainer)
 			if(ipcontainer.reserver != null && Arrays.equals(ipcontainer.reserver, macaddress)) 
 			{
-				ipcontainer.reserver = null;
-				ipcontainer.leaseDuration = 0.0;
+				ipcontainer.release();
 				return true;
 			}
 		return false;
+	}
+	
+	public void printContent()
+	{
+		//System.out.println("Size of IP pool listIPContainer.size());
+		int numberReserved = 0, numberAllocated = 0;
+		for(IPContainer ipc : listIPContainer)
+		{
+			if(ipc.isReserved()) ++numberReserved;
+			if(ipc.isAllocated()) ++ numberAllocated;
+		}
+		System.out.println("Size of IP pool: reserved: " + numberReserved + " , allocated: " + numberAllocated);
+	}
+
+	public void update() 
+	{
+		for(IPContainer ipc : listIPContainer)
+		{
+			if(ipc.isAllocated() && ipc.leaseDuration > 0) ipc.update();
+			if(ipc.isAllocated() && ipc.leaseDuration <= 0)
+			{
+				ipc.release();
+				System.out.println("IP released ");
+				printContent();
+			}
+			
+		}
+		
+		
 	}
 }

@@ -342,4 +342,14 @@ public class DHCPMessage
 	public void resetoptions() {
 		options.clear();
 	}
+	
+	public byte[] getOptionData(byte opCode)
+	{
+		for(DHCPoption opt : options)
+		{
+			if(opt.getCode() == opCode)
+				return opt.getData();
+		}
+		return null;
+	}
 }

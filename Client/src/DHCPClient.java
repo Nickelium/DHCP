@@ -8,6 +8,7 @@ import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Scanner;
 
 
 public class DHCPClient 
@@ -20,17 +21,19 @@ public class DHCPClient
 	public final String IPServerLocalhost = "localhost";
 	
 	public final String IPInUse = IPServerLocalhost;
+
 	
 	//macaddress with padding
 	public final int[] macAddress = {0x40,0xE2,0x30,0xCB,0xDE,0xE3,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
 	public final byte MACLENGTH = 6;
-	
+	public final int leaseDuration = 10; 
+
 	/**
 	 * Attributes
 	 */
 	public InetAddress IPServer; 
 	private DatagramSocket clientSocket;
-	
+	private byte[] IPAllocated = new byte[4];
 	
 	public  DHCPClient()
 	{
@@ -115,6 +118,8 @@ public class DHCPClient
 			int[] i = {1};
 			message.addOption((byte)53, (byte)1, Utility.toBytes(i));
 			
+			message.addOption((byte)51, (byte)4, Utility.toByteArray(leaseDuration));
+			
 			// Set option 255 to indicate the end of the message
 			int[] j = {0};
 			message.addOption((byte) 255, (byte)0, Utility.toBytes(j));
@@ -141,6 +146,7 @@ public class DHCPClient
 			// Set the opcode to request
 			message.opCode = DHCPMessage.BOOTREQUEST;
 			
+			
 			// clear the options
 			message.resetoptions();
 			
@@ -157,7 +163,9 @@ public class DHCPClient
 			
 			// Set option 54 to the IP adress of the server
 			message.addOption((byte)54, (byte)4, message.serverIP);
-						
+			
+			message.addOption((byte)51, (byte)4, Utility.toByteArray(leaseDuration));			
+		
 			// Set option 255 to indicate the end of the message
 			int[] j = {0};
 			message.addOption((byte) 255, (byte)0, Utility.toBytes(j));
@@ -176,7 +184,84 @@ public class DHCPClient
 	
 	public void DHCPRelease()
 	{
+		try
+		{
+			System.out.print("Building DHCP Release \n");
+
+			DHCPMessage message = new DHCPMessage();
+	
+			// Request
+			message.opCode = DHCPMessage.BOOTREQUEST; 
+			
+			message.hardWareType = DHCPMessage.ETHERNET;
+			// Length MAC-adress
+			message.hardWareAddressLength = MACLENGTH;
+			
+			// Hopcount set to zero by client
+			message.hopCount = 0;
+			
+			// Hashcode 32 bit = 4 byte fills transactionID with exactly 4 byte
+			ByteBuffer a = ByteBuffer.allocate(4);
+			a.putInt(message.hashCode());
+			message.transactionID = a.array();
+			
+			int[] b = {0,0};
+			message.secs = Utility.toBytes(b);
+			
+			int[] c = {0,0};
+			message.flags = Utility.toBytes(c);
+			
 		
+			message.clientIP = IPAllocated;
+			
+			// Not yet an IP adress -> null
+			int[] e = {0,0,0,0};
+			message.yourIP =  Utility.toBytes(e);
+			
+			// Set server IP to zero
+			int[] e2 = {0,0,0,0};
+			message.serverIP =  Utility.toBytes(e2);
+			
+			// Gateway ip set to o
+			int[] f = {0,0,0,0};
+			message.gateWayIP = Utility.toBytes(f);
+			
+			// Client hardware adress			
+			message.clientHardWareAddress = Utility.toBytes(macAddress);
+			
+			// Optional: set or not set Server Host Name
+			int[] g = new int[64];
+			for(int i = 0; i < g.length; i++)
+				g[i] = 0;
+			message.serverHostName = Utility.toBytes(g);
+			
+			// Optional: set or not set Boot File Name
+			int[] h = new int[128];
+			for(int i = 0; i < h.length; i++)
+				h[i] = 0;
+			message.bootFileName = Utility.toBytes(h);
+			
+			message.magicCookie = DHCPMessage.COOKIE;
+			
+			// Set option 53 to value 7
+			int[] i = {7};
+			message.addOption((byte)53, (byte)1, Utility.toBytes(i));
+			
+			message.addOption((byte)54, (byte)4, IPInUse.getBytes());
+			// Set option 255 to indicate the end of the message
+			int[] j = {0};
+			message.addOption((byte) 255, (byte)0, Utility.toBytes(j));
+			
+			IPServer = InetAddress.getByName(IPInUse);
+			DatagramPacket sendingPacket = new DatagramPacket(message.retrieveBytes(), message.getLength(), IPServer, portServer);
+			clientSocket.send(sendingPacket);	
+			
+			System.out.println("DHCPRelease sent\n");
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
 	}
 
 	
@@ -219,8 +304,20 @@ public class DHCPClient
 		
 		DHCPMessage message2 = new DHCPMessage(receivePacketAck.getData());
 		System.out.println(message2);
+		IPAllocated = message2.yourIP;
+		System.out.println("IP Allocated to this client: ");
+		Utility.printDataBytes(IPAllocated);
 		
-		DHCPRelease();
+		//scanner for release or not
+		Scanner scanner = new Scanner(System.in);
+		System.out.println("Do you want to release your ip ?\n  Indicate 0 or 1");
+		boolean input = false;
+		if(scanner.hasNextInt()) 
+			input = scanner.nextInt() == 1 ? true :false ;
+		
+		if(input)
+			DHCPRelease();
+		
 		//Later on DHCPRelease
 		clientSocket.close();
 	
