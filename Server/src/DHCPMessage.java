@@ -1,4 +1,3 @@
-import java.security.cert.PKIXRevocationChecker.Option;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -116,7 +115,7 @@ public class DHCPMessage
     }
     public ArrayList<DHCPoption> options = new ArrayList<>(); //options (rest)
     
-    public final static int MINLENGTH = 240; //bytes
+    public final static int MINLENGTH = 240; 
     
     public final static int MAXLENGTH = 576;
     
@@ -126,7 +125,6 @@ public class DHCPMessage
     }
     public DHCPMessage(byte[] buffer)
     {
-    	//if(buffer.length < minimalLength) throw new Exception();
     	opCode = buffer[0];
     	hardWareType = buffer[1];
     	hardWareAddressLength = buffer[2];
@@ -188,28 +186,18 @@ public class DHCPMessage
     	}
     }
     
-	//For options only do the must, look up in the RFC
-	/*
-	 	DHCPMessageType in option 
-	    DHCPDISCOVER = 1,  //a client broadcasts to locate servers
-	    DHCPOFFER = 2,     //a server offers an IP address to the device
-	    DHCPREQUEST = 3,   //client accepts offers from DHCP server
-	    DHCPDECLINE = 4,   //client declines the offer from this DHCP server
-	    DHCPACK = 5,       //server to client + committed IP address
-	    DHCPNAK = 6,       //server to client to state net address incorrect
-	    DHCPRELEASE = 7,   //graceful shutdown from client to Server
-	    DHCPINFORM = 8     //client to server asking for local info
 
-	*/
-    
-    public final static byte DHCPDISCOVER = 1;
-    public final static byte DHCPOFFER = 2;
-    public final static byte DHCPREQUEST = 3;
-    public final static byte DHCPDECLINE = 4;
-    public final static byte DHCPACK = 5;
-    public final static byte DHCPNAK = 6;
-    public final static byte DHCPRELEASE = 7;
-    public final static byte DHCPINFORM = 8;
+    /**
+     * DHCP Message Type as option
+     */
+    public final static byte DHCPDISCOVER = 1;	//a client broadcasts to locate servers
+    public final static byte DHCPOFFER = 2; 	//a server offers an IP address to the device
+    public final static byte DHCPREQUEST = 3;	//client accepts offers from DHCP server
+    public final static byte DHCPDECLINE = 4;	//client declines the offer from this DHCP server
+    public final static byte DHCPACK = 5;		//server to client + committed IP address
+    public final static byte DHCPNAK = 6;		//server to client to state net address incorrect
+    public final static byte DHCPRELEASE = 7;	//graceful shutdown from client to Server
+    public final static byte DHCPINFORM = 8;	//client to server asking for local info
     
     public byte getType()
     {
