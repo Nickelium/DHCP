@@ -1,6 +1,8 @@
 package ClientTest;
 
 
+// TODO: Tri wat doet dit??
+
 import java.net.*;
 
 public class Client 
