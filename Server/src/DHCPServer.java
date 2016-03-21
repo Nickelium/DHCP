@@ -53,8 +53,8 @@ public class DHCPServer
 		message.resetoptions();
 		
 		// Set option 53 to value 2
-		int[] i = {2};
-		message.addOption((byte)53, (byte)1, Utility.toBytes(i));
+		byte[] i = {DHCPMessage.DHCPOFFER};
+		message.addOption((byte)53, (byte)1, i);
 		
 		message.addOption((byte)54, (byte)4, message.serverIP);
 		//TODO ADD LEASE TIME AS OPTION
@@ -119,8 +119,8 @@ public class DHCPServer
 			message.resetoptions();
 			
 			// Set option 53 to value 5
-			int[] i = {5};
-			message.addOption((byte)53, (byte)1, Utility.toBytes(i));
+			byte[] i = {DHCPMessage.DHCPACK};
+			message.addOption((byte)53, (byte)1, i);
 			
 			message.addOption((byte)54, (byte)4,message.serverIP);
 			//TODO ADD LEASE TIME AS OPTION
@@ -175,8 +175,8 @@ public class DHCPServer
 			message.resetoptions();
 			
 			// Set option 53 to value 5
-			int[] i = {6};
-			message.addOption((byte)53, (byte)1, Utility.toBytes(i));
+			byte[] i = {DHCPMessage.DHCPNAK};
+			message.addOption((byte)53, (byte)1, i);
 			
 			message.addOption((byte)54, (byte)4,message.serverIP);
 			//TODO ADD LEASE TIME AS OPTION
