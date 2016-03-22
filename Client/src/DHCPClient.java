@@ -12,7 +12,7 @@ import java.util.Scanner;
 
 /**
  * This DHCPClient will send and receive messages with the target of receiving and allocating an IP-address
- * THe client will not broadcast a DHCP discover message, therefore an IP-address of the server must be assigned on top
+ * The client will not broadcast a DHCP discover message, therefore an IP-address of the server must be assigned on top
  * 
  * @author Tobias & Tri
  */
@@ -23,7 +23,7 @@ public class DHCPClient
 	public final String IPServerString = "10.33.14.246";
 	public final String IPServerLocalhost = "localhost";
 	public final byte MACLENGTH = 6;
-	public final int leaseDuration = 10; 
+	public final int leaseDuration = 60; 
 	public InetAddress IPServer; 
 	private DatagramSocket clientSocket;
 	private byte[] IPAllocated = new byte[4];
@@ -52,15 +52,15 @@ public class DHCPClient
 	}
 	
 	/**
-	 * This method will be called by MailClient after initialization of the client to start running the client
+	 * This method will be called by MainClient after initialization of the client to start running the client
 	 * 1: Send a DHCP-discover
 	 * 2: Listen for a DHCP-offer
 	 * 3: Send a DHCP-Request
 	 * 4: Listen for a DHCP-ack or DHCP-nack
 	 * 	  4.1: If ACK: set Client IP to the given IP
-	 * 	  4.2: If NACK: retry
-	 * 5: Ask if the client want to release the IP-adress
-	 * 	  5.2: If so, send release message
+	 * 	 	 4.1.1: Ask if the client want to release the IP-adress
+	 * 	  		4.1.1.1: If so, send release message
+	 * 	  4.2: If NACK: No IP set, terminated
 	 */
 	public void run()
 	{
@@ -90,7 +90,6 @@ public class DHCPClient
 		DHCPRequest(receivePacketOffer);
 		
 		// Listen for DHCPAck OR DHCPNak (4)
-		// If DHCPNak return method (4.2)
 		DatagramPacket receivePacketAck = new DatagramPacket(buffer,length);
 		try 
 		{
@@ -102,25 +101,37 @@ public class DHCPClient
 			e.printStackTrace();
 		}
 		
-		// Receive a DHCPACK message (4.1)
+		
 		Utility.printDataBytes(receivePacketAck.getData());
 		DHCPMessage message2 = new DHCPMessage(receivePacketAck.getData());
 		System.out.println(message2);
 		
-		// Allocate client-IP
-		IPAllocated = message2.yourIP;
-		System.out.println("IP Allocated to this client: ");
-		Utility.printDataBytes(IPAllocated);
-		
-		// Ask if the IP must be released (5)
-		Scanner scanner = new Scanner(System.in);
-		System.out.println("Do you want to release your ip ?\n  Indicate 0 or 1");
-		boolean input = false;
-		if(scanner.hasNextInt()) 
-			input = scanner.nextInt() == 1 ? true :false ;
-		if(input)
-			DHCPRelease();
-		scanner.close();
+		//Determine DHCPAck OR DHCPNak
+		switch(message2.getType())
+		{
+			case DHCPMessage.DHCPACK :
+				// Allocate client-IP (4.1)
+				IPAllocated = message2.yourIP;
+				System.out.println("IP Allocated to this client: ");
+				Utility.printDataBytes(IPAllocated);
+				
+					// Ask if the client wants to release his IP (4.1.1)
+					Scanner scanner = new Scanner(System.in);
+					System.out.print("Do you want to release your ip ?\nIndicate 0 or 1: ");
+					boolean input = false;
+					if(scanner.hasNextInt()) 
+						input = scanner.nextInt() == 1 ? true :false ;
+					if(input)
+						// Send DHCPRelease (4.1.1.1)
+						DHCPRelease();
+					scanner.close();
+					break;
+			case DHCPMessage.DHCPNAK : 
+				//No IP allocated (4.2)
+				System.out.println("No IP allocated to this client");	
+				return;
+				
+		}
 		
 		// Close the socket
 		clientSocket.close();	
@@ -191,8 +202,8 @@ public class DHCPClient
 			message.magicCookie = DHCPMessage.COOKIE;
 			
 			// Set option 53 to value 1
-			int[] i = {1};
-			message.addOption((byte)53, (byte)1, Utility.toBytes(i));
+			byte[] i = {DHCPMessage.DHCPDISCOVER};
+			message.addOption((byte)53, (byte)1, i);
 			
 			message.addOption((byte)51, (byte)4, Utility.toByteArray(leaseDuration));
 			
@@ -212,7 +223,7 @@ public class DHCPClient
 	
 	/**
 	 * Build and send a DHCPRequest based on the given DHCPOffer message
-	 * @param receivePacket		The recieved DHCPOffer
+	 * @param receivePacket		The received DHCPOffer
 	 */
 	public  void DHCPRequest(DatagramPacket receivePacket){
 		try
@@ -233,8 +244,8 @@ public class DHCPClient
 			message.yourIP =  Utility.toBytes(yourip);
 			
 			// Set option 53 to value 3
-			int[] i = {3};
-			message.addOption((byte)53, (byte)1, Utility.toBytes(i));
+			byte[] i = {DHCPMessage.DHCPREQUEST};
+			message.addOption((byte)53, (byte)1, i);
 			
 			// Set option 54 to the IP address of the server
 			message.addOption((byte)54, (byte)4, message.serverIP);
@@ -277,19 +288,22 @@ public class DHCPClient
 			a.putInt(message.hashCode());
 			message.transactionID = a.array();
 			
+			// Secs to zero
 			int[] b = {0,0};
 			message.secs = Utility.toBytes(b);
 			
+			// Flags to zero
 			int[] c = {0,0};
 			message.flags = Utility.toBytes(c);
 			
+			// Set the client IP to the IP that was allocated
 			message.clientIP = IPAllocated;
 			
-			// TODO: set your allocated IP?
+			// Set your IP to zero
 			int[] e = {0,0,0,0};
 			message.yourIP =  Utility.toBytes(e);
 			
-			// TODO: set server IP?
+			// Set server IP to zero
 			int[] e2 = {0,0,0,0};
 			message.serverIP =  Utility.toBytes(e2);
 			
@@ -306,7 +320,7 @@ public class DHCPClient
 				g[i] = 0;
 			message.serverHostName = Utility.toBytes(g);
 			
-			// Optional: set or not set Boot File Name
+			// Optional: set or not set Server Host Name
 			int[] h = new int[128];
 			for(int i = 0; i < h.length; i++)
 				h[i] = 0;
@@ -316,8 +330,10 @@ public class DHCPClient
 			message.magicCookie = DHCPMessage.COOKIE;
 			
 			// Set option 53 to value 7
-			int[] i = {7};
-			message.addOption((byte)53, (byte)1, Utility.toBytes(i));
+			byte[] i = {DHCPMessage.DHCPRELEASE};
+			message.addOption((byte)53, (byte)1, i);
+			
+			// Set option 54 to value of the IP of the server that allocated the IP address
 			
 			message.addOption((byte)54, (byte)4, IPInUse.getBytes());
 			// Set option 255 to indicate the end of the message
@@ -328,7 +344,6 @@ public class DHCPClient
 			IPServer = InetAddress.getByName(IPInUse);
 			DatagramPacket sendingPacket = new DatagramPacket(message.retrieveBytes(), message.getLength(), IPServer, portServer);
 			clientSocket.send(sendingPacket);	
-			
 			System.out.println("DHCPRelease sent\n");
 		}
 		catch(Exception e){e.printStackTrace();}

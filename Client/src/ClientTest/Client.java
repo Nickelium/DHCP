@@ -1,7 +1,7 @@
 package ClientTest;
 
 
-// TODO: Tri wat doet dit??
+// TODO: Tri wat doet dit?? :: Test van UDP, niet meer nodig voor het project
 
 import java.net.*;
 

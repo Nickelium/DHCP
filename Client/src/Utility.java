@@ -49,9 +49,9 @@ public class Utility
 	}
 	
 	/**
-	 * TODO: Tri wat doet dit ?
-	 * @param b
-	 * @return
+	 * Convert a given signed byte to an unsigned byte which is stored in an int.
+	 * @param 	the signed  byte
+	 * @return	the unsigned byte
 	 */
 	public static int unsignedByte(byte b)
 	{
@@ -59,9 +59,9 @@ public class Utility
 	}
 	
 	/**
-	 * TODO: Tri wat doet dit?
-	 * @param Byte
-	 * @return
+	 * Convert a list of signed byte to a list of unsigned byte which the value are stored in a list of int.
+	 * @param	the list of signed bytes
+	 * @return	the list of unsigned bytes
 	 */
 	public static int[] unsignedBytes(byte[] Byte)
 	{

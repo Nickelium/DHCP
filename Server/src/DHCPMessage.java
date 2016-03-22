@@ -1,4 +1,3 @@
-import java.security.cert.PKIXRevocationChecker.Option;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -215,6 +214,7 @@ public class DHCPMessage
     public final static byte DHCPNAK = 		6;
     public final static byte DHCPRELEASE = 	7;
     public final static byte DHCPINFORM = 	8;
+
     
     /**
      * @return the type of option 53 (length 1)
