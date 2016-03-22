@@ -2,20 +2,28 @@ import java.security.cert.PKIXRevocationChecker.Option;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+/**
+ * This class represents a DHCP message
+ * It can collect all data for a message including options
+ * Afterwards it can generate the message represented in bytes
+ * Or visa versa, derive the different field from a given message
+ * 
+ * @author Tobias & Tri
+ */
 public class DHCPMessage 
 {
-	public final static byte BOOTREQUEST = 1;
-	public final static byte BOOTREPLY = 2;
+	// Often used variables
+	
 	/**
 	 * General type message
 	 * 1=request | 2= reply
 	 * No other values possible
 	 */
+	public final static byte BOOTREQUEST = 1;
+	public final static byte BOOTREPLY = 2;
+
 	public byte opCode; 
 	
-	
-	public final static byte ETHERNET = 1;
-	public final static byte IEEE802 = 6;
 	/**
 	 * Hardware type
 	 * 1 = 10MB ethernet
@@ -31,6 +39,8 @@ public class DHCPMessage
      * 19 = Asynchronous Transfer mode
      * 20 = Serial Line
 	 */
+	public final static byte ETHERNET = 1;
+	public final static byte IEEE802 = 6;
     public byte hardWareType;
 
     /**
@@ -98,35 +108,41 @@ public class DHCPMessage
     public byte[] bootFileName = new byte[128];
     
     /**
+     * Fix code combination (99.130.83.99), defining start of options zone
+     */
+    public static final byte[] COOKIE = Utility.toBytes(new int[]{99,130,83,99});
+    public byte[] magicCookie = new byte[4];
+    
+    /**
      * Add option to the HDCP message
      * @param Code		The Code of the option
      * @param Length	The length corresponding with the option
      * @param Data		The actual value of the code
      */
-    
-    public static final byte[] COOKIE = Utility.toBytes(new int[]{99,130,83,99});
-    /**
-     * Fix code combination (99.130.83.99), defining start of options zone
-     */
-    public byte[] magicCookie = new byte[4];
-    
     public void addOption(byte Code, byte Length, byte[] Data){
     	DHCPoption newoption = new DHCPoption(Code, Length, Data);
     	options.add(newoption);
     }
-    public ArrayList<DHCPoption> options = new ArrayList<>(); //options (rest)
     
-    public final static int MINLENGTH = 240; //bytes
+    public ArrayList<DHCPoption> options = new ArrayList<>();
     
+    public final static int MINLENGTH = 240;   
     public final static int MAXLENGTH = 576;
     
+    /**
+     * Constructor that constructs an empty message
+     */
     public DHCPMessage()
     {
     	
     }
+    
+    /**
+     * Constructor that constructs an instance of DHCP message out of a given message
+     * @param 	buffer (message)
+     */
     public DHCPMessage(byte[] buffer)
     {
-    	//if(buffer.length < minimalLength) throw new Exception();
     	opCode = buffer[0];
     	hardWareType = buffer[1];
     	hardWareAddressLength = buffer[2];
@@ -188,29 +204,21 @@ public class DHCPMessage
     	}
     }
     
-	//For options only do the must, look up in the RFC
-	/*
-	 	DHCPMessageType in option 
-	    DHCPDISCOVER = 1,  //a client broadcasts to locate servers
-	    DHCPOFFER = 2,     //a server offers an IP address to the device
-	    DHCPREQUEST = 3,   //client accepts offers from DHCP server
-	    DHCPDECLINE = 4,   //client declines the offer from this DHCP server
-	    DHCPACK = 5,       //server to client + committed IP address
-	    DHCPNAK = 6,       //server to client to state net address incorrect
-	    DHCPRELEASE = 7,   //graceful shutdown from client to Server
-	    DHCPINFORM = 8     //client to server asking for local info
-
-	*/
-    
+    /**
+     * Values for option 53 (length 1)
+     */
     public final static byte DHCPDISCOVER = 1;
-    public final static byte DHCPOFFER = 2;
-    public final static byte DHCPREQUEST = 3;
-    public final static byte DHCPDECLINE = 4;
-    public final static byte DHCPACK = 5;
-    public final static byte DHCPNAK = 6;
-    public final static byte DHCPRELEASE = 7;
-    public final static byte DHCPINFORM = 8;
+    public final static byte DHCPOFFER = 	2;
+    public final static byte DHCPREQUEST = 	3;
+    public final static byte DHCPDECLINE = 	4;
+    public final static byte DHCPACK = 		5;
+    public final static byte DHCPNAK = 		6;
+    public final static byte DHCPRELEASE = 	7;
+    public final static byte DHCPINFORM = 	8;
     
+    /**
+     * @return the type of option 53 (length 1)
+     */
     public byte getType()
     {
     	for(DHCPoption opt : options)
@@ -218,6 +226,11 @@ public class DHCPMessage
     	return 0;
     }
     
+    /**
+     * Create an option in this message that matches the representation in the given list of bytes
+     * (if possible: matching length, ...)
+     * @param 	Buffer (option in bytes)
+     */
     private void createOptions(byte[] Buffer){
     	//1 byte geeft error bij checken buffer.length ==0, want outofbound
     	//2 bytes minimaal aantal bytes :: bv. 2(=code) 0(lengte)
@@ -229,7 +242,6 @@ public class DHCPMessage
     		addOption(opCode, length, data);
     		return;
     	}
-    	
     	byte option = Buffer[0];
     	byte length = Buffer[1];
     	int k = length+2;
@@ -244,6 +256,9 @@ public class DHCPMessage
     	createOptions(topass);
     }
     
+    /**
+     * @return a liest of bytes that represent this message in the DHCP standards
+     */
     public byte[] retrieveBytes()
     {
     	byte[] toReturn = new byte[getLength() + 1];
@@ -304,16 +319,20 @@ public class DHCPMessage
     		j += options.get(i).getTotalLength();
     	}
 
-    	return toReturn;
-    		
+    	return toReturn;	
     }
     
+    /**
+     * @return the length of this message in bytes conform the DHCP standards
+     */
     public int getLength()
     {
     	return MINLENGTH + getOptionsLength();
     }
     
-
+    /**
+     * @return the length of this message's options in bytes conform the DHCP standards
+     */
 	private int getOptionsLength() {
 		int length = 0;
 		for(int i = 0; i < options.size(); i++){
@@ -322,6 +341,9 @@ public class DHCPMessage
 		return length;
 	}
 	
+	/**
+	 * return a string representing this message for human readability
+	 */
 	public String toString()
 	{
 		String toStringOptions = "\n";
@@ -338,11 +360,19 @@ public class DHCPMessage
 				+ "\nMagiccookie: " +  Arrays.toString(Utility.unsignedBytes(magicCookie)) 
 				+ toStringOptions;	
 	}
-
+	
+	/**
+	 * Reset the options of this message
+	 */
 	public void resetoptions() {
 		options.clear();
 	}
 	
+	/**
+	 * Return the value of the given option type (if this options is part of this message)
+	 * @param 	opCode
+	 * @return	Value of the option in a list of bytes
+	 */
 	public byte[] getOptionData(byte opCode)
 	{
 		for(DHCPoption opt : options)

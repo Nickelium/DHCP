@@ -2,18 +2,28 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+/**
+ * The IPStorrage manages all IP addresses in this storage
+ * @author Tobias & Tri
+ */
 public class IPStorage 
 {
 	private ArrayList<IPContainer> listIPContainer;
 	private byte[] IP  = Utility.toBytes(new int[]{192,168,1,0});
 	private int IPRange = 5;
 	
+	/**
+	 * Constructor calls the initialization of the pool of IP addresses
+	 */
 	public IPStorage()
 	{
 		listIPContainer = new ArrayList<>();
 		init();
 	}
 	
+	/**
+	 * Initialize the pool of IP addresses to manage
+	 */
 	private void init()
 	{
 		byte[] IPIncrementing = IP;
@@ -27,22 +37,27 @@ public class IPStorage
 			}
 		}
 		catch(Exception e)
-		{
-			e.printStackTrace();
-		}
+		{e.printStackTrace();}
 	}
 	
-	//Assume only in the range of zero to 255
-	//Does not support out of this range
+	/**
+	 * Increment the given IP address and checks if its valid
+	 * Assume only in the range of zero to 255
+	 * @param IPAddress
+	 * @return
+	 */
 	private byte[] incrementIPAddress(byte[] IPAddress)
 	{
 		if(IPAddress.length != 4) throw new IllegalArgumentException("Invalid ip4 format");
-		
 		int IPInt = Utility.toInt(IPAddress);
 		IPInt++;
 		return Utility.toByteArray(IPInt);
 	}
 	
+	/**
+	 * @return if the given IP is reserved or not
+	 * @param ip
+	 */
 	private boolean isReserved(InetAddress ip)
 	{
 		for(IPContainer ipcontainer : listIPContainer)
@@ -51,6 +66,12 @@ public class IPStorage
 		return false;
 	}
 	
+	/**
+	 * Look for a reserved or allocated IP address to the given MAC address
+	 * @param 	macaddress
+	 * @return	the reserved or allocated IP address (if there is one)
+	 * 			otherwise null will be returned
+	 */
 	public byte[] lookUp(byte[] macaddress)
 	{
 		for(IPContainer ipcontainer : listIPContainer)
@@ -58,6 +79,12 @@ public class IPStorage
 		return null;
 	}
 	
+	/**
+	 * Reserve a free IP address to the given MAC adress for the given duration
+	 * @param 	macaddress
+	 * @param 	leaseDuration
+	 * @return	the allocated IP address
+	 */
 	public byte[] reserveAddress(byte[] macaddress, int leaseDuration)
 	{
 		if(lookUp(macaddress) != null) return lookUp(macaddress);
@@ -70,6 +97,11 @@ public class IPStorage
 		return null;
 	}
 	
+	/**
+	 * Allocate the IP address that is already reserved for the given MAC address
+	 * @param 	macaddress
+	 * @return	the allocated IP address
+	 */
 	public byte[] allocateAddress(byte[] macaddress)
 	{
 		if(lookUp(macaddress) == null) return null;
@@ -86,6 +118,11 @@ public class IPStorage
 		
 	}
 	
+	/**
+	 * Release the IP address reserved by or allocated to the given MAC address
+	 * @param macaddress
+	 * @return
+	 */
 	public boolean release(byte[] macaddress)
 	{
 		if(lookUp(macaddress) == null) return false;
@@ -98,6 +135,9 @@ public class IPStorage
 		return false;
 	}
 	
+	/**
+	 * Print the content of this IP storage
+	 */
 	public void printContent()
 	{
 		//System.out.println("Size of IP pool listIPContainer.size());
@@ -109,7 +149,10 @@ public class IPStorage
 		}
 		System.out.println("Size of IP pool: reserved: " + numberReserved + " , allocated: " + numberAllocated);
 	}
-
+	
+	/**
+	 * Update the content of this IP Storage, lower all leasetimes of allocated IP's
+	 */
 	public void update() 
 	{
 		for(IPContainer ipc : listIPContainer)
